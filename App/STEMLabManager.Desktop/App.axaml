@@ -1,0 +1,44 @@
+<Application xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="STEMLabManager.Desktop.App" xmlns:local="using:STEMLabManager.Desktop" RequestedThemeVariant="Light">
+  <Application.DataTemplates><local:ViewLocator /></Application.DataTemplates>
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="PageBrush" Color="#F5F7FC" />
+          <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="NavigationBrush" Color="#F0F4FC" />
+          <SolidColorBrush x:Key="TextBrush" Color="#1C2941" />
+          <SolidColorBrush x:Key="SecondaryBrush" Color="#65758E" />
+          <SolidColorBrush x:Key="BorderBrush" Color="#E5EBF5" />
+          <SolidColorBrush x:Key="MutedSurfaceBrush" Color="#EBF0FA" />
+          <SolidColorBrush x:Key="InputBrush" Color="#F1F4FA" />
+          <SolidColorBrush x:Key="PrimaryContainerBrush" Color="#DFE9FF" />
+          <SolidColorBrush x:Key="PrimaryTextBrush" Color="#315BDB" />
+          <SolidColorBrush x:Key="SuccessBrush" Color="#237658" />
+          <SolidColorBrush x:Key="WarningBrush" Color="#9B660C" />
+          <SolidColorBrush x:Key="ErrorBrush" Color="#B53950" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="PageBrush" Color="#101725" />
+          <SolidColorBrush x:Key="SurfaceBrush" Color="#192337" />
+          <SolidColorBrush x:Key="NavigationBrush" Color="#151E30" />
+          <SolidColorBrush x:Key="TextBrush" Color="#E8EDF7" />
+          <SolidColorBrush x:Key="SecondaryBrush" Color="#AAB8CF" />
+          <SolidColorBrush x:Key="BorderBrush" Color="#2B3850" />
+          <SolidColorBrush x:Key="MutedSurfaceBrush" Color="#25334A" />
+          <SolidColorBrush x:Key="InputBrush" Color="#222E43" />
+          <SolidColorBrush x:Key="PrimaryContainerBrush" Color="#273F6E" />
+          <SolidColorBrush x:Key="PrimaryTextBrush" Color="#B7CAFF" />
+          <SolidColorBrush x:Key="SuccessBrush" Color="#8BDDAD" />
+          <SolidColorBrush x:Key="WarningBrush" Color="#F4CC81" />
+          <SolidColorBrush x:Key="ErrorBrush" Color="#FFA6B6" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
+  <Application.Styles>
+    <FluentTheme />
+    <StyleInclude Source="/Themes/MaterialTheme.axaml" />
+  </Application.Styles>
+</Application>

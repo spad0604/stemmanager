@@ -1,0 +1,14 @@
+# Hướng dẫn STEM Lab Manager
+
+1. Cài `STEMManager-Setup-x64.exe`, mở shortcut. Lần đầu đặt tên phòng và tài khoản quản trị; mật khẩu ít nhất 12 ký tự, có chữ hoa, thường, số. Không có mật khẩu mặc định.
+2. Trong **Danh mục & vị trí**, thêm ngăn/kệ và loại thiết bị. Trong **Thiết bị**, tạo thiết bị: cá thể có QR riêng; theo số lượng có thể mượn/trả; tiêu hao xuất khỏi tồn và không trả. Chọn một dòng rồi dùng nút thao tác. Dữ liệu quan trọng không xóa cứng.
+3. Thêm **Người mượn** hoặc import CSV/Excel. Xác nhận ánh xạ cột Code, Name, Class, Type, Contact; xem trước và sửa toàn bộ lỗi trước khi nhập. Người mượn không cần tài khoản ứng dụng.
+4. **Mượn–Trả → Tạo phiếu**: chọn người, thêm các dòng thiết bị, kiểm tra hạn trả và mục đích rồi xác nhận bàn giao. Chọn phiếu và **Trả thiết bị** để trả một phần; lượng 0 bỏ qua dòng. Hỏng chuyển bảo trì, mất không trở lại khả dụng. **Lịch sử** giữ phiếu đã đóng.
+5. **Đặt trước**: tạo khoảng ngày giờ, quản lý duyệt. Đến giờ, chọn **Bàn giao lịch đặt** và xác nhận giao thực tế. Thiếu tồn/trùng lịch bị từ chối. Hủy/từ chối cần lý do; hết hạn/no-show cần được xử lý.
+6. **Nhập kho & kiểm kê**: số lượng dùng phiên kiểm đếm, cá thể dùng Kiểm kê QR (mỗi dòng một mã), xác nhận điều chỉnh sau khi kiểm tra. Cá thể thiếu chuyển Mất, tìm lại chuyển Sẵn sàng. **Bảo trì** ghi lỗi và hoàn tất sửa để đưa cá thể trở lại sử dụng.
+7. **Báo cáo**: chọn kỳ, loại báo cáo, xuất CSV/XLSX/PDF. Thống kê local chạy offline. **Phân tích AI** có dự báo trung bình đơn giản, ghi nguồn và giới hạn. LLM chỉ hoạt động nếu quản trị bật; phải xem trước JSON tổng hợp trước mỗi lần gửi. Trong Cài đặt LLM, OpenAI dùng endpoint `https://api.openai.com/v1/chat/completions`, model `gpt-5`; nhập khóa vào trường mật khẩu để lưu mã hóa. Khóa cấu hình chỉ thuộc dữ liệu của tài khoản OS hiện tại, không tự đi theo bản cài Windows hoặc chế độ Demo.
+8. Nhận diện mặt mặc định tắt. Chỉ bật khi có căn cứ xử lý, consent phù hợp; đăng ký từ camera Windows. Nhân viên đối chiếu người thật, thẻ/QR, thực hiện hai lần chụp và thử thách quay mặt theo hướng ngẫu nhiên. Đây chỉ là kiểm tra chuyển động cơ bản; kết quả nhận diện là ứng viên. QR/mã luôn thay thế được. Thu hồi consent xóa embedding, giữ sự kiện xóa; restore tắt Face để rà soát consent trước bật lại.
+9. **Sao lưu** mỗi ngày và lưu thêm bản ở USB/ổ khác. Backup chứa khóa giải mã: chỉ người được phép giữ file. **Phục hồi** kiểm tra backup, giữ DB cũ và yêu cầu đăng nhập lại. Gỡ/cập nhật ứng dụng giữ dữ liệu trong LocalAppData.
+10. Shortcut **STEM Demo** hoặc tham số `--demo` mở DB minh họa riêng. Tạo tài khoản riêng, vào Cài đặt → Nạp dữ liệu minh họa. Không dùng thông tin học sinh thật trong demo.
+
+Ngày giờ nhập `dd/MM/yyyy HH:mm`, hiển thị giờ máy, lưu UTC. Ctrl+K tìm nhanh; Enter xác nhận form. Phiên tự khóa sau thời gian bất hoạt (mặc định 10 phút).

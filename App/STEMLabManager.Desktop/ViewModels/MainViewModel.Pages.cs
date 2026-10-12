@@ -1,0 +1,73 @@
+using STEMLabManager.Application;
+using STEMLabManager.Domain;
+using STEMLabManager.AI;
+namespace STEMLabManager.Desktop.ViewModels;
+
+public partial class MainViewModel
+{
+    private async Task LoadPageAsync()
+    {
+        Actions.Clear();allRows=[];Kpis.Clear();Bars.Clear();DailyBars.Clear();InsightText="";SelectedRow=null;
+        switch(currentPage)
+        {
+            case "dashboard":case "analytics":
+                var dates=Dates();analytics=await service.AnalyticsAsync(dates.Start,dates.End);
+                Kpis.Add(new("Khả dụng",analytics.Available.ToString(),"Cá thể và số lượng sẵn sàng","box","#008579","#E5F5EF"));
+                Kpis.Add(new("Đang mượn",analytics.OpenLoans.ToString(),"Phiếu đang mở","arrows","#315BDB","#E9EEFF"));
+                Kpis.Add(new("Quá hạn",analytics.Overdue.ToString(),"Phiếu cần được nhắc trả","clock","#C24957","#FDEDF0"));
+                Kpis.Add(new("Lịch hôm nay",analytics.TodayReservations.ToString(),"Lịch đặt đã được duyệt","calendar","#8754CF","#F2ECFC"));
+                TrendPoints=analytics.Daily;RankingPoints=analytics.TopAssets;OverdueFraction=analytics.OverdueRate;
+                PeriodLoanCount=analytics.TotalLoans.ToString();PeriodBorrowerCount=analytics.UniqueBorrowers.ToString();UtilizationLabel=analytics.Utilization.ToString("P1",System.Globalization.CultureInfo.GetCultureInfo("vi-VN"));
+                var max=Math.Max(1,analytics.TopAssets.Select(x=>x.Value).DefaultIfEmpty(1).Max());foreach(var p in analytics.TopAssets)Bars.Add(new(p.Label,p.Value,220*p.Value/max));
+                var dailyMax=Math.Max(1,analytics.Daily.Select(x=>x.Value).DefaultIfEmpty(1).Max());foreach(var p in analytics.Daily)DailyBars.Add(new(p.Label,p.Value,200*p.Value/dailyMax));
+                Notifications.Clear();foreach(var n in analytics.Notifications.Take(30))Notifications.Add(n);
+                allRows=(await service.LoansAsync(true)).Take(20).Select(LoanDisplay).ToList();
+                InsightText=currentPage=="analytics"?Insights.Local(analytics):$"Kỳ báo cáo: {analytics.TotalLoans} phiếu, {analytics.UniqueBorrowers} người mượn. Tỷ lệ quá hạn {analytics.OverdueRate:P1}.";
+                if(currentPage=="analytics"){AddAction("Phân tích local",Permission.Reports,()=>{Message=Insights.Local(analytics);return Task.CompletedTask;});AddAction("AI nhận xét (xem trước)",Permission.Reports,LlmAsync);}
+                AddAction("Tạo phiếu mượn",Permission.IssueLoan,()=>WizardAsync(false));break;
+            case "assets":
+                allRows=(await service.AssetsAsync(includeArchived:true)).Select(x=>new DisplayRow(x.Id,x.Code,x.Name,$"{x.Category} • {x.Location} • {Labels.Kind(x.Kind)}",x.Archived?"Ngừng sử dụng":"Hoạt động",$"{x.Available}/{x.Total} {x.Unit}",x)).ToList();
+                AddAction("Thêm thiết bị",Permission.ManageAssets,()=>AssetFormAsync(null));AddAction("Import CSV/Excel",Permission.ManageAssets,ImportAssetsAsync);AddAction("Sửa",Permission.ManageAssets,()=>AssetFormAsync(Selected().Id));AddAction("Cá thể & QR",Permission.Read,()=>{unitAssetId=Selected().Id;currentPage="units";Title="Cá thể thiết bị";Description="Mã QR riêng, trạng thái và vị trí từng cá thể.";return Task.CompletedTask;});
+                AddAction("Nhập/điều chỉnh tồn",Permission.ManageAssets,StockAsync);AddAction("Ảnh thiết bị",Permission.ManageAssets,AssetImageAsync);AddAction("Xuất QR",Permission.Read,()=>QrAsync("STEM:ASSET:"+Selected().Code));AddAction("Ngừng sử dụng",Permission.ManageAssets,async()=>{var r=Selected();if(await dialogs.ConfirmAsync("Ngừng sử dụng",$"Ngừng sử dụng {r.Name}; lịch sử được giữ lại."))await service.ArchiveAssetAsync(r.Id);});break;
+            case "units":
+                allRows=(await service.UnitsAsync(unitAssetId)).Select(x=>new DisplayRow(x.Id,x.QrValue,x.Serial??$"Cá thể #{x.Id}",$"Vị trí #{x.LocationId} • {x.Condition}",Labels.Unit(x.Status),"1",x)).ToList();
+                AddAction("Về thiết bị",Permission.Read,()=>{currentPage="assets";Title="Thiết bị";return Task.CompletedTask;});AddAction("Xuất QR",Permission.Read,()=>QrAsync(Selected().Code));AddAction("Chuyển vị trí",Permission.ManageAssets,MoveAsync);AddAction("Serial & tình trạng",Permission.ManageAssets,UnitDetailsAsync);AddAction("Báo hỏng",Permission.ManageAssets,()=>MaintenanceFormAsync(Selected().Id));AddAction("Ngừng cá thể",Permission.ManageAssets,RetireAsync);break;
+            case "catalog":
+                allRows=[..(await service.CategoriesAsync()).Select(x=>new DisplayRow(x.Id,$"DM-{x.Id}",x.Name,"Danh mục","Danh mục","",x)),..(await service.LocationsAsync()).Select(x=>new DisplayRow(x.Id,$"VT-{x.Id}",x.Name,"Vị trí","Vị trí","",x))];
+                AddAction("Thêm danh mục",Permission.ManageAssets,()=>LookupAsync(true,null));AddAction("Thêm vị trí",Permission.ManageAssets,()=>LookupAsync(false,null));AddAction("Đổi tên",Permission.ManageAssets,()=>LookupAsync(Selected().Source is Category,Selected()));break;
+            case "borrowers":
+                allRows=(await service.BorrowersAsync()).Select(x=>new DisplayRow(x.Id,x.Code,x.Name,$"{x.ClassName} • {x.Type}",x.Active?"Hoạt động":"Vô hiệu",$"{x.OpenLoans} đang giữ • {x.OverdueLoans} quá hạn",x)).ToList();
+                AddAction("Thêm người mượn",Permission.ManageBorrowers,()=>BorrowerFormAsync(null));AddAction("Sửa",Permission.ManageBorrowers,()=>BorrowerFormAsync((BorrowerRow)Selected().Source));AddAction("Import CSV/Excel",Permission.ManageBorrowers,ImportAsync);AddAction("Xuất QR",Permission.Read,()=>QrAsync(Selected().Code));AddAction("Vô hiệu hóa",Permission.ManageBorrowers,async()=>{var r=Selected();if(await dialogs.ConfirmAsync("Vô hiệu hóa người mượn",r.Name+" sẽ không thể nhận phiếu mới."))await service.DeactivateBorrowerAsync(r.Id);});break;
+            case "loans":case "history":case "overdue":
+                allRows=(await service.LoansAsync(currentPage=="history")).Where(x=>currentPage!="overdue" || x.Overdue).Select(LoanDisplay).ToList();
+                AddAction("Tạo phiếu",Permission.IssueLoan,()=>WizardAsync(false));AddAction(currentPage=="history"?"Đang mượn":"Lịch sử",Permission.Read,()=>{currentPage=currentPage=="history"?"loans":"history";Title=currentPage=="history"?"Lịch sử mượn–trả":"Mượn – Trả";return Task.CompletedTask;});AddAction("Trả thiết bị",Permission.ReturnLoan,ReturnFormAsync);AddAction("Gia hạn",Permission.ApproveReservation,ExtendFormAsync);AddAction("QR biên nhận",Permission.Read,()=>QrAsync(Selected().Code));break;
+            case "reservations":
+                allRows=(await service.ReservationsAsync()).Select(x=>new DisplayRow(x.Id,x.Code,x.Borrower,$"{x.StartUtc.ToLocalTime():dd/MM/yyyy HH:mm} → {x.EndUtc.ToLocalTime():dd/MM/yyyy HH:mm} • {x.Note}",Labels.Reservation(x.Status),$"{x.Lines.Sum(l=>l.Quantity)} đơn vị",x)).ToList();
+                AddAction("Đặt trước",Permission.RequestReservation,()=>WizardAsync(true));AddAction("Duyệt",Permission.ApproveReservation,()=>ChangeReservationAsync(ReservationStatus.Approved));AddAction("Từ chối",Permission.ApproveReservation,()=>ChangeReservationAsync(ReservationStatus.Rejected));AddAction("Hủy",Permission.RequestReservation,()=>ChangeReservationAsync(ReservationStatus.Cancelled));AddAction("Hết hạn/no-show",Permission.ApproveReservation,()=>ChangeReservationAsync(ReservationStatus.Expired));AddAction("Bàn giao lịch đặt",Permission.IssueLoan,FulfillAsync);break;
+            case "maintenance":
+                allRows=(await service.MaintenanceAsync()).Select(x=>new DisplayRow(x.Id,$"BT-{x.Id}",$"Cá thể #{x.UnitId}",x.Reason+(x.ClosedUtc.HasValue?" • "+x.Resolution:""),x.ClosedUtc.HasValue?"Đã sửa":"Đang sửa",$"{x.Cost:N0} ₫",x)).ToList();
+                AddAction("Báo hỏng",Permission.ManageAssets,()=>MaintenanceFormAsync(null));AddAction("Hoàn tất sửa",Permission.ManageAssets,CloseMaintenanceAsync);break;
+            case "inventory":
+                allRows=(await service.InventoryAsync()).Select(x=>new DisplayRow(x.Id,$"KK-{x.Id}",$"Kiểm kê vị trí #{x.LocationId}",$"{x.CreatedUtc.ToLocalTime():dd/MM/yyyy HH:mm} • {x.Note}",x.ConfirmedUtc.HasValue?"Đã xác nhận":"Chờ xác nhận",$"{x.Counts.Count} dòng; lệch {x.Counts.Sum(c=>c.Actual-c.Expected)} • {x.Units.Count(u=>u.Present)}/{x.Units.Count} QR",x)).ToList();
+                AddAction("Nhập kho",Permission.ManageAssets,StockAsync);AddAction("Kiểm kê số lượng",Permission.ManageAssets,InventoryFormAsync);AddAction("Kiểm kê QR cá thể",Permission.ManageAssets,QrInventoryFormAsync);AddAction("Xác nhận điều chỉnh",Permission.ManageAssets,async()=>{var r=Selected();if(await dialogs.ConfirmAsync("Xác nhận kiểm kê",r.Details+". Điều chỉnh tồn và ghi nhật ký trong cùng transaction."))await service.ConfirmInventoryAsync(r.Id);});break;
+            case "users":
+                allRows=(await service.UsersAsync()).Select(x=>new DisplayRow(x.Id,x.Username,x.DisplayName,Labels.Role(x.Role),x.IsActive?"Hoạt động":"Vô hiệu","",x)).ToList();AddAction("Thêm tài khoản",Permission.ManageUsers,()=>UserFormAsync(null));AddAction("Sửa / đặt lại mật khẩu",Permission.ManageUsers,()=>UserFormAsync((UserAccount)Selected().Source));break;
+            case "settings":
+                allRows=(await service.SettingsAsync()).Select((x,i)=>new DisplayRow(i+1,x.Key,x.Key,x.Value,"Cấu hình","",x)).ToList();
+                AddAction("Cấu hình phòng",Permission.Settings,RoomSettingsAsync);AddAction("Cấu hình LLM",Permission.Settings,LlmSettingsAsync);AddAction("Cấu hình khuôn mặt",Permission.Settings,FaceSettingsAsync);AddAction("Đổi mật khẩu",Permission.Read,PasswordAsync);AddAction("Giao diện sáng/tối",Permission.Read,ThemeAsync);if(IsDemo)AddAction("Nạp dữ liệu minh họa",Permission.Settings,async()=>{if(await dialogs.ConfirmAsync("Nạp dữ liệu minh họa","Nạp dữ liệu giả vào DB demo riêng. Chỉ thực hiện khi DB demo chưa có thiết bị."))await service.SeedDemoAsync();});break;
+            case "backup":
+                var backups=await service.BackupsAsync();allRows=backups.Select((p,i)=>new DisplayRow(i+1,Path.GetFileName(p),"Bản sao lưu",p,"Đã tạo",$"{new FileInfo(p).Length/1024:N0} KB",p)).ToList();
+                var settings=await service.SettingsAsync();if(!DateTime.TryParse(settings.GetValueOrDefault("backup.lastExternalUtc"),out var external)||external<DateTime.UtcNow.AddDays(-7))Message="Chưa ghi nhận bản sao ngoài thư mục dữ liệu trong 7 ngày. Hãy sao lưu vào USB hoặc ổ khác.";
+                AddAction("Sao lưu ngay",Permission.Backup,async()=>{Message="Đã sao lưu: "+await service.BackupAsync();});AddAction("Sao lưu ra USB/thư mục",Permission.Backup,async()=>{var directory=await dialogs.FolderAsync("Thư mục sao lưu ngoài máy");if(directory!=null)Message="Đã sao lưu: "+await service.BackupAsync(directory);});AddAction("Phục hồi từ file",Permission.Backup,RestoreAsync);break;
+            case "audit":allRows=(await service.AuditAsync()).Select(x=>new DisplayRow(x.Id,$"#{x.Id}",x.Action,$"{x.CreatedUtc.ToLocalTime():dd/MM/yyyy HH:mm:ss} • {x.EntityType} #{x.EntityId} • {x.Details}",x.ActorId.HasValue?$"Tài khoản #{x.ActorId}":"Hệ thống",x.DeviceId,x)).ToList();break;
+            case "reports":
+                allRows=new[]{("assets","Danh sách thiết bị"),("loans","Giao dịch mượn–trả"),("reservations","Lịch đặt trước"),("inventory","Kết quả kiểm kê"),("analytics","Hiệu suất sử dụng"),("borrowers","Danh sách người mượn")}.Where(x=>x.Item1!="borrowers" || Access.Allows(service.CurrentActor!.Role,Permission.PersonalData)).Select((x,i)=>new DisplayRow(i+1,x.Item1,x.Item2,"Dùng kỳ ngày ở phía trên; danh mục và kiểm kê xuất toàn bộ.","Báo cáo","CSV / XLSX / PDF",x.Item1)).ToList();AddAction("Xuất CSV",Permission.Reports,()=>ExportAsync("csv"));AddAction("Xuất Excel",Permission.Reports,()=>ExportAsync("xlsx"));AddAction("Xuất PDF",Permission.Reports,()=>ExportAsync("pdf"));break;
+            case "face":
+                allRows=(await service.BorrowersAsync()).Where(x=>x.Active).Select(x=>new DisplayRow(x.Id,x.Code,x.Name,x.ClassName,"Người mượn","QR / mã luôn khả dụng",x)).ToList();AddAction("Kiểm tra model",Permission.Biometrics,InspectModelsAsync);AddAction("Đăng ký từ camera",Permission.Biometrics,()=>EnrollAsync(true));AddAction("Kiểm tra ảnh ONNX",Permission.Biometrics,()=>FaceImageAsync(false));AddAction("Tìm từ camera",Permission.Biometrics,()=>FindFaceAsync());AddAction("Thu hồi / xóa embedding",Permission.Biometrics,async()=>{var r=Selected();if(await dialogs.ConfirmAsync("Thu hồi consent",$"Xóa embedding của {r.Name}; lịch sử giao dịch và sự kiện thu hồi được giữ."))await service.RevokeConsentAsync(r.Id);});break;
+            case "help":
+                allRows=[new(1,"01","Bắt đầu","Lần đầu tạo quản trị với mật khẩu 12 ký tự, chữ hoa/thường và số. Thêm danh mục, vị trí, thiết bị và người mượn.","Hướng dẫn","",1),new(2,"02","Mượn–trả","Tạo phiếu qua wizard 3 bước. Chọn phiếu và Trả thiết bị để trả từng dòng; hỏng chuyển bảo trì; tiêu hao không trả.","Hướng dẫn","",2),new(3,"03","Đặt trước","Tạo yêu cầu, quản lý duyệt, đến giờ chọn Bàn giao lịch đặt. Trùng lịch hoặc thiếu tồn sẽ bị từ chối.","Hướng dẫn","",3),new(4,"04","Bảo vệ dữ liệu","Sao lưu mỗi ngày; copy backup sang USB. Backup chứa khóa giải mã, phải hạn chế người truy cập. Restore sẽ khóa phiên.","Hướng dẫn","",4),new(5,"05","AI và demo","Face mặc định OFF, xác nhận thủ công. LLM gửi JSON tổng hợp xem trước. Khởi động --demo dùng DB riêng.","Hướng dẫn","",5),new(6,"06","Phiên bản",VersionLabel,"Thông tin","",6)];AddAction("Đổi mật khẩu",Permission.Read,PasswordAsync);break;
+        }
+        Filters.Clear();Filters.Add("Tất cả");foreach(var f in allRows.Select(x=>x.Status).Distinct().Order())Filters.Add(f);StatusFilter="Tất cả";ApplyRows();UpdateCalendar();UpdatePresentation();OnPropertyChanged(nameof(IsDashboard));
+    }
+    private static DisplayRow LoanDisplay(LoanRow x)=>new(x.Id,x.Code,x.Borrower,$"Hạn {x.DueUtc.ToLocalTime():dd/MM/yyyy HH:mm} • {x.Summary} • {x.Purpose}",x.Status==LoanStatus.Closed?"Hoàn tất":x.Overdue?"Quá hạn":"Đang mượn",x.Staff,x);
+}

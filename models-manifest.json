@@ -1,0 +1,6 @@
+{
+  "models": [
+    {"file":"face_detection_yunet_2026may.onnx","purpose":"face detection, five landmarks","sha256":"ebafce4e3c118d6554634be5c27ab333b4c047a9a8c3faf1d7cf93101c22f0f0","license":"MIT","source":"https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet","origin":"supplied by user"},
+    {"file":"face_recognition_sface_2021dec.onnx","purpose":"128-dimensional face embedding","sha256":"0ba9fbfa01b5270c96627c4ef784da859931e02f04419c829e83484087c34e79","license":"Apache-2.0","source":"https://github.com/opencv/opencv_zoo/tree/main/models/face_recognition_sface","origin":"downloaded from OpenCV Zoo"}
+  ]
+}

@@ -1,0 +1,62 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:STEMLabManager.Desktop.ViewModels"
+        xmlns:app="using:STEMLabManager.Application" xmlns:domain="using:STEMLabManager.Domain" xmlns:c="using:STEMLabManager.Desktop.Controls"
+        x:Class="STEMLabManager.Desktop.Views.LoanWizardWindow" x:DataType="vm:LoanWizardViewModel" Title="{Binding Title}"
+        Width="820" Height="720" MinWidth="560" MinHeight="420" WindowStartupLocation="CenterOwner">
+  <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="24" Margin="16" Padding="24">
+    <Grid RowDefinitions="Auto,Auto,*,Auto" RowSpacing="18">
+      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+        <Border Background="{DynamicResource PrimaryContainerBrush}" Width="44" Height="44" CornerRadius="14"><c:AppIcon Kind="arrows" Foreground="{DynamicResource PrimaryTextBrush}" Width="22" Height="22" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+        <StackPanel Grid.Column="1" Spacing="5"><TextBlock Text="{Binding Title}" FontSize="24" FontWeight="SemiBold"/><TextBlock Text="{Binding StepTitle}" Classes="caption" FontSize="11"/></StackPanel>
+      </Grid>
+      <Grid Grid.Row="1" ColumnDefinitions="*,*,*" ColumnSpacing="10">
+        <Border Classes="step" Classes.active="{Binding StepOne}"><StackPanel Orientation="Horizontal" Spacing="9"><Border Classes="stepNumber"><TextBlock Text="1" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><TextBlock Text="Người mượn" FontSize="12" VerticalAlignment="Center"/></StackPanel></Border>
+        <Border Grid.Column="1" Classes="step" Classes.active="{Binding StepTwo}"><StackPanel Orientation="Horizontal" Spacing="9"><Border Classes="stepNumber"><TextBlock Text="2" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><TextBlock Text="Thiết bị" FontSize="12" VerticalAlignment="Center"/></StackPanel></Border>
+        <Border Grid.Column="2" Classes="step" Classes.active="{Binding StepThree}"><StackPanel Orientation="Horizontal" Spacing="9"><Border Classes="stepNumber"><TextBlock Text="3" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><TextBlock Text="Xác nhận" FontSize="12" VerticalAlignment="Center"/></StackPanel></Border>
+      </Grid>
+      <ScrollViewer Grid.Row="2">
+        <Grid>
+          <StackPanel IsVisible="{Binding StepOne}" Spacing="14">
+            <TextBlock Text="Tìm người nhận thiết bị bằng tên, mã hoặc QR." Classes="caption"/>
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10"><Grid><TextBox Text="{Binding BorrowerSearch}" PlaceholderText="Tìm tên hoặc mã người mượn" Padding="38,10,12,10"/><c:AppIcon Kind="search" Width="17" Height="17" Foreground="{DynamicResource SecondaryBrush}" IsHitTestVisible="False" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="13,0"/></Grid><Button Grid.Column="1" Command="{Binding SearchBorrowerCommand}"><c:AppIcon Kind="search" Width="18" Height="18"/></Button></Grid>
+            <ListBox Classes="dataList" ItemsSource="{Binding Borrowers}" SelectedItem="{Binding Borrower}" Height="280">
+              <ListBox.ItemTemplate><DataTemplate x:DataType="app:BorrowerRow">
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                  <Border Background="{DynamicResource PrimaryContainerBrush}" Width="38" Height="38" CornerRadius="14"><c:AppIcon Kind="user" Width="19" Height="19" Foreground="{DynamicResource PrimaryTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                  <StackPanel Grid.Column="1" Spacing="5"><TextBlock Text="{Binding Name}" FontWeight="Medium" FontSize="13"/><StackPanel Orientation="Horizontal" Spacing="10"><TextBlock Text="{Binding Code}" Classes="caption" FontSize="11"/><TextBlock Text="{Binding ClassName}" Classes="caption" FontSize="11"/></StackPanel></StackPanel>
+                  <c:AppIcon Grid.Column="2" Kind="chevron-right" Width="16" Height="16" Foreground="{DynamicResource SecondaryBrush}" VerticalAlignment="Center"/>
+                </Grid>
+              </DataTemplate></ListBox.ItemTemplate>
+            </ListBox>
+          </StackPanel>
+          <StackPanel IsVisible="{Binding StepTwo}" Spacing="12">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10"><TextBox Text="{Binding AssetSearch}" PlaceholderText="Tìm thiết bị"/><Button Grid.Column="1" Command="{Binding SearchAssetCommand}"><c:AppIcon Kind="search" Width="18" Height="18"/></Button></Grid>
+            <TextBlock Text="Thiết bị" FontSize="12" FontWeight="Medium"/>
+            <ComboBox ItemsSource="{Binding Assets}" SelectedItem="{Binding Asset}" HorizontalAlignment="Stretch"><ComboBox.ItemTemplate><DataTemplate x:DataType="app:AssetRow"><Grid ColumnDefinitions="Auto,*" ColumnSpacing="9"><c:AppIcon Kind="box" Width="17" Height="17" Foreground="{DynamicResource PrimaryTextBrush}"/><TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="13"/></Grid></DataTemplate></ComboBox.ItemTemplate></ComboBox>
+            <TextBlock Text="Cá thể cụ thể · để trống để tự chọn khi giao" Classes="caption" FontSize="11"/>
+            <ComboBox ItemsSource="{Binding Units}" SelectedItem="{Binding Unit}" HorizontalAlignment="Stretch"><ComboBox.ItemTemplate><DataTemplate x:DataType="domain:AssetUnit"><TextBlock Text="{Binding QrValue}" FontSize="12"/></DataTemplate></ComboBox.ItemTemplate></ComboBox>
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10"><TextBox Text="{Binding Quantity}" PlaceholderText="Số lượng"/><Button Grid.Column="1" Classes="primary" Command="{Binding AddLineCommand}"><StackPanel Orientation="Horizontal" Spacing="8"><c:AppIcon Kind="plus" Width="17" Height="17" Foreground="White"/><TextBlock Text="Thêm vào phiếu" FontSize="12"/></StackPanel></Button></Grid>
+            <ListBox Classes="dataList" ItemsSource="{Binding Cart}" SelectedItem="{Binding SelectedLine}" Height="150"><ListBox.ItemTemplate><DataTemplate x:DataType="vm:CartLine"><Grid ColumnDefinitions="24,*" ColumnSpacing="10"><c:AppIcon Kind="box" Width="18" Height="18" Foreground="{DynamicResource PrimaryTextBrush}"/><TextBlock Grid.Column="1" Text="{Binding Label}" FontSize="12" TextWrapping="Wrap"/></Grid></DataTemplate></ListBox.ItemTemplate></ListBox>
+            <Button Command="{Binding RemoveLineCommand}" HorizontalAlignment="Left"><StackPanel Orientation="Horizontal" Spacing="8"><c:AppIcon Kind="close" Width="16" Height="16"/><TextBlock Text="Bỏ dòng đã chọn" FontSize="12"/></StackPanel></Button>
+          </StackPanel>
+          <StackPanel IsVisible="{Binding StepThree}" Spacing="12">
+            <Border Background="{DynamicResource PrimaryContainerBrush}" CornerRadius="16" Padding="16"><Grid ColumnDefinitions="24,*" ColumnSpacing="12"><c:AppIcon Kind="clipboard" Foreground="{DynamicResource PrimaryTextBrush}"/><TextBlock Grid.Column="1" Text="{Binding Review}" FontSize="12" LineHeight="21" TextWrapping="Wrap"/></Grid></Border>
+            <StackPanel IsVisible="{Binding IsReservation}" Spacing="7"><TextBlock Text="Bắt đầu · dd/MM/yyyy HH:mm" FontSize="12" FontWeight="Medium"/><TextBox Text="{Binding Start}"/></StackPanel>
+            <TextBlock Text="Kết thúc / hạn trả · dd/MM/yyyy HH:mm" FontSize="12" FontWeight="Medium"/><TextBox Text="{Binding Due}"/>
+            <TextBlock Text="Mục đích / ghi chú" FontSize="12" FontWeight="Medium"/><TextBox Text="{Binding Purpose}" AcceptsReturn="True" MinHeight="75"/>
+            <TextBlock Text="Xác nhận khi đã kiểm tra thông tin và việc bàn giao thực tế." Classes="caption" FontSize="11" TextWrapping="Wrap"/>
+          </StackPanel>
+        </Grid>
+      </ScrollViewer>
+      <StackPanel Grid.Row="3" Spacing="10">
+        <TextBlock Text="{Binding Error}" TextWrapping="Wrap" Foreground="{DynamicResource ErrorBrush}" FontSize="12"/>
+        <ProgressBar IsIndeterminate="True" IsVisible="{Binding Busy}" Height="3"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" IsEnabled="{Binding !Busy}">
+          <Button Content="Hủy" IsCancel="True" Command="{Binding CancelCommand}"/>
+          <Button Command="{Binding BackCommand}"><StackPanel Orientation="Horizontal" Spacing="7"><c:AppIcon Kind="arrow-left" Width="16" Height="16"/><TextBlock Text="Quay lại" FontSize="12"/></StackPanel></Button>
+          <Button Classes="primary" Command="{Binding NextCommand}" IsVisible="{Binding !StepThree}"><StackPanel Orientation="Horizontal" Spacing="7"><TextBlock Text="Tiếp tục" FontSize="12"/><c:AppIcon Kind="arrow-right" Width="16" Height="16" Foreground="White"/></StackPanel></Button>
+          <Button Classes="primary" Command="{Binding ConfirmCommand}" IsVisible="{Binding StepThree}"><StackPanel Orientation="Horizontal" Spacing="7"><c:AppIcon Kind="check" Width="17" Height="17" Foreground="White"/><TextBlock Text="Xác nhận" FontSize="12"/></StackPanel></Button>
+        </StackPanel>
+      </StackPanel>
+    </Grid>
+  </Border>
+</Window>

@@ -1,0 +1,54 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:STEMLabManager.Desktop.ViewModels" xmlns:c="using:STEMLabManager.Desktop.Controls"
+             x:Class="STEMLabManager.Desktop.Views.DashboardView" x:DataType="vm:MainViewModel">
+  <StackPanel Spacing="20">
+    <ItemsControl ItemsSource="{Binding Kpis}">
+      <ItemsControl.ItemsPanel><ItemsPanelTemplate><c:AdaptiveTilesPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:Kpi">
+          <Border Classes="card" Padding="18" MinHeight="140">
+            <StackPanel Spacing="9">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                <TextBlock Text="{Binding Label}" Foreground="{DynamicResource SecondaryBrush}" FontSize="13" VerticalAlignment="Center" TextWrapping="Wrap" />
+                <Border Grid.Column="1" Background="{Binding Tint}" CornerRadius="12" Width="36" Height="36"><c:AppIcon Kind="{Binding Icon}" Foreground="{Binding Accent}" Width="20" Height="20" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+              </Grid>
+              <TextBlock Text="{Binding Value}" FontSize="34" FontWeight="SemiBold" />
+              <TextBlock Text="{Binding Hint}" Classes="caption" FontSize="11" TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+
+    <c:AdaptiveColumnsPanel Ratio="2.2">
+      <Border Classes="card">
+        <StackPanel Spacing="12">
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Spacing="6"><TextBlock Text="Xu hướng mượn thiết bị" Classes="sectionTitle" /><TextBlock Text="Số phiếu theo ngày trong kỳ đã chọn" Classes="caption" /></StackPanel>
+            <Border Grid.Column="1" Classes="chip" VerticalAlignment="Top"><StackPanel Orientation="Horizontal" Spacing="6"><Border Width="7" Height="7" Background="#315BDB" CornerRadius="4" VerticalAlignment="Center" /><TextBlock Text="Lượt mượn" FontSize="11" /></StackPanel></Border>
+          </Grid>
+          <c:TrendChart ItemsSource="{Binding TrendPoints}" Height="215" Foreground="{DynamicResource SecondaryBrush}" GridBrush="{DynamicResource BorderBrush}" />
+        </StackPanel>
+      </Border>
+      <Border Classes="card">
+        <StackPanel Spacing="10">
+          <TextBlock Text="Tỷ lệ quá hạn" Classes="sectionTitle" TextWrapping="Wrap" />
+          <TextBlock Text="Trong kỳ đã chọn" Classes="caption" />
+          <c:DonutChart Value="{Binding OverdueFraction}" TrackBrush="{DynamicResource MutedSurfaceBrush}" Foreground="{DynamicResource TextBrush}" Width="140" Height="140" HorizontalAlignment="Center" />
+          <Grid ColumnDefinitions="*,Auto"><StackPanel Orientation="Horizontal" Spacing="7"><c:AppIcon Kind="arrows" Width="15" Height="15" Foreground="{DynamicResource SecondaryBrush}" /><TextBlock Text="Phiếu mượn" Classes="caption" /></StackPanel><TextBlock Grid.Column="1" Text="{Binding PeriodLoanCount}" FontWeight="SemiBold" /></Grid>
+          <Grid ColumnDefinitions="*,Auto"><StackPanel Orientation="Horizontal" Spacing="7"><c:AppIcon Kind="users" Width="15" Height="15" Foreground="{DynamicResource SecondaryBrush}" /><TextBlock Text="Người mượn" Classes="caption" /></StackPanel><TextBlock Grid.Column="1" Text="{Binding PeriodBorrowerCount}" FontWeight="SemiBold" /></Grid>
+          <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Mức sử dụng" Classes="caption" /><TextBlock Grid.Column="1" Text="{Binding UtilizationLabel}" FontWeight="SemiBold" Foreground="{DynamicResource SuccessBrush}" /></Grid>
+        </StackPanel>
+      </Border>
+    </c:AdaptiveColumnsPanel>
+
+    <c:AdaptiveColumnsPanel Ratio="1.2">
+      <Border Classes="card"><StackPanel Spacing="14"><Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="6"><TextBlock Text="Thiết bị được dùng nhiều" Classes="sectionTitle" /><TextBlock Text="Top 5 · số đơn vị xuất trong kỳ" Classes="caption" /></StackPanel><c:AppIcon Grid.Column="1" Kind="chart" Foreground="{DynamicResource PrimaryTextBrush}" /></Grid><c:RankingChart ItemsSource="{Binding RankingPoints}" Height="250" Foreground="{DynamicResource SecondaryBrush}" GridBrush="{DynamicResource MutedSurfaceBrush}" /></StackPanel></Border>
+      <Border Classes="card"><StackPanel Spacing="14"><Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="6"><TextBlock Text="Cần chú ý" Classes="sectionTitle" /><TextBlock Text="Thông báo từ lần tải gần nhất" Classes="caption" /></StackPanel><Border Grid.Column="1" Classes="chip" VerticalAlignment="Top"><TextBlock Text="{Binding Notifications.Count}" Foreground="{DynamicResource WarningBrush}" FontWeight="SemiBold" /></Border></Grid>
+        <TextBlock IsVisible="{Binding !HasNotifications}" Text="Mọi thứ đang ổn. Chưa có thông báo cần xử lý." Classes="caption" TextWrapping="Wrap" Margin="0,24" />
+        <ScrollViewer MaxHeight="260"><ItemsControl ItemsSource="{Binding Notifications}"><ItemsControl.ItemTemplate><DataTemplate x:DataType="x:String"><Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1" Padding="0,11"><Grid ColumnDefinitions="28,*" ColumnSpacing="8"><Border Background="#FFF3DC" CornerRadius="9" Width="28" Height="28" VerticalAlignment="Top"><c:AppIcon Kind="bell" Foreground="#9B660C" Width="15" Height="15" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border><TextBlock Grid.Column="1" Text="{Binding}" TextWrapping="Wrap" FontSize="12" LineHeight="19" /></Grid></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl></ScrollViewer>
+      </StackPanel></Border>
+    </c:AdaptiveColumnsPanel>
+    <Border Background="{DynamicResource PrimaryContainerBrush}" CornerRadius="18" Padding="18" IsVisible="{Binding IsDashboard}"><Grid ColumnDefinitions="28,*" ColumnSpacing="12"><c:AppIcon Kind="sparkles" Foreground="{DynamicResource PrimaryTextBrush}" VerticalAlignment="Top" /><TextBlock Grid.Column="1" Text="{Binding InsightText}" TextWrapping="Wrap" FontSize="12" LineHeight="20" /></Grid></Border>
+  </StackPanel>
+</UserControl>

@@ -1,0 +1,170 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:STEMLabManager.Desktop.ViewModels" xmlns:c="using:STEMLabManager.Desktop.Controls"
+        xmlns:views="using:STEMLabManager.Desktop.Views" x:Class="STEMLabManager.Desktop.Views.MainWindow"
+        x:DataType="vm:MainViewModel" Title="STEM Lab Manager" Width="1366" Height="768" MinWidth="860" MinHeight="420">
+  <Grid>
+    <ScrollViewer IsVisible="{Binding !Authenticated}">
+      <Grid ColumnDefinitions="*,*" MaxWidth="960" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="32" ColumnSpacing="24">
+        <Border Background="{DynamicResource PrimaryContainerBrush}" CornerRadius="28" Padding="36">
+          <StackPanel Spacing="24" VerticalAlignment="Center">
+            <Border Background="#315BDB" CornerRadius="20" Width="72" Height="72" HorizontalAlignment="Left"><c:AppIcon Kind="layers" Foreground="White" Width="38" Height="38" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+            <TextBlock Text="STEM Lab Manager" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" />
+            <TextBlock Text="Không gian STEM,&#10;quản lý gọn gàng." FontSize="32" FontWeight="SemiBold" TextWrapping="Wrap" LineHeight="43" />
+            <TextBlock Text="Một nơi để theo dõi thiết bị, tổ chức mượn trả và chuẩn bị cho những giờ học sáng tạo." FontSize="14" TextWrapping="Wrap" LineHeight="24" Foreground="{DynamicResource SecondaryBrush}" />
+            <StackPanel Spacing="16" Margin="0,10,0,0">
+              <StackPanel Orientation="Horizontal" Spacing="12"><c:AppIcon Kind="box" Foreground="{DynamicResource PrimaryTextBrush}" /><TextBlock Text="Thiết bị luôn trong tầm kiểm soát" VerticalAlignment="Center" FontSize="12" /></StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="12"><c:AppIcon Kind="calendar" Foreground="{DynamicResource PrimaryTextBrush}" /><TextBlock Text="Sắp lịch rõ ràng, giao dịch dễ dàng" VerticalAlignment="Center" FontSize="12" /></StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="12"><c:AppIcon Kind="shield" Foreground="{DynamicResource PrimaryTextBrush}" /><TextBlock Text="Dữ liệu tại trường, sử dụng offline" VerticalAlignment="Center" FontSize="12" /></StackPanel>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+        <Border Grid.Column="1" Classes="card" Padding="32" CornerRadius="28">
+          <StackPanel Spacing="12">
+            <Border Classes="chip" HorizontalAlignment="Left"><StackPanel Orientation="Horizontal" Spacing="6"><c:AppIcon Kind="shield" Width="14" Height="14" Foreground="{DynamicResource SuccessBrush}" /><TextBlock Text="{Binding ModeLabel}" FontSize="11" Foreground="{DynamicResource SuccessBrush}" /></StackPanel></Border>
+            <TextBlock Text="{Binding AuthTitle}" FontSize="28" FontWeight="SemiBold" Margin="0,12,0,0" />
+            <TextBlock Text="Chào mừng đến với phòng STEM của bạn." Classes="caption" TextWrapping="Wrap" Margin="0,0,0,12" />
+            <TextBlock Text="Tài khoản" FontSize="12" FontWeight="SemiBold" />
+            <TextBox Text="{Binding Username}" PlaceholderText="Tên đăng nhập" />
+            <TextBlock Text="Mật khẩu" FontSize="12" FontWeight="SemiBold" />
+            <TextBox Text="{Binding Password}" PasswordChar="●" PlaceholderText="Nhập mật khẩu" />
+            <StackPanel IsVisible="{Binding NeedsSetup}" Spacing="10">
+              <TextBlock Text="Tên quản trị viên" FontSize="12" FontWeight="SemiBold" /><TextBox Text="{Binding DisplayName}" PlaceholderText="Họ tên của bạn" />
+              <TextBlock Text="Tên phòng" FontSize="12" FontWeight="SemiBold" /><TextBox Text="{Binding Room}" />
+              <TextBlock Text="Mật khẩu từ 12 ký tự, có chữ hoa, chữ thường và số." Classes="caption" TextWrapping="Wrap" />
+            </StackPanel>
+            <TextBlock Text="{Binding Error}" IsVisible="{Binding HasError}" Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding Message}" IsVisible="{Binding HasMessage}" TextWrapping="Wrap" Classes="caption" />
+            <ProgressBar IsVisible="{Binding Busy}" IsIndeterminate="True" Height="3" />
+            <Button Classes="primary" Command="{Binding LoginCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="{Binding !Busy}" IsDefault="True" Margin="0,8,0,0">
+              <StackPanel Orientation="Horizontal" Spacing="10"><TextBlock Text="{Binding AuthTitle}" /><c:AppIcon Kind="arrow-right" Width="18" Height="18" Foreground="White" /></StackPanel>
+            </Button>
+          </StackPanel>
+        </Border>
+      </Grid>
+    </ScrollViewer>
+
+    <Grid IsVisible="{Binding Authenticated}" IsEnabled="{Binding !Busy}" ColumnDefinitions="240,*">
+      <Border Background="{DynamicResource NavigationBrush}">
+        <Grid RowDefinitions="Auto,*,Auto">
+          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12" Margin="24,28,16,22">
+            <Border Background="#315BDB" CornerRadius="14" Width="42" Height="42"><c:AppIcon Kind="layers" Foreground="White" Width="24" Height="24" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2"><TextBlock Text="STEM" FontSize="22" FontWeight="Bold" /><TextBlock Text="Lab Manager" Classes="caption" FontSize="11" /></StackPanel>
+          </Grid>
+          <ListBox Grid.Row="1" Classes="navList" ItemsSource="{Binding Navigation}" SelectedItem="{Binding SelectedNav}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:NavItem">
+                <StackPanel>
+                  <TextBlock Text="{Binding Group}" IsVisible="{Binding ShowGroup}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryBrush}" Margin="12,16,0,8" />
+                  <Border Classes="navEntry" Classes.active="{Binding Active}">
+                    <Grid ColumnDefinitions="22,*" ColumnSpacing="12"><c:AppIcon Kind="{Binding Icon}" Foreground="{DynamicResource SecondaryBrush}" Width="20" Height="20" VerticalAlignment="Center" /><TextBlock Grid.Column="1" Text="{Binding Title}" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" /></Grid>
+                  </Border>
+                </StackPanel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <StackPanel Grid.Row="2" Margin="16,16,16,20" Spacing="12">
+            <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="14" Padding="12"><StackPanel Orientation="Horizontal" Spacing="8"><Border Width="6" Height="6" CornerRadius="3" Background="{DynamicResource SuccessBrush}" VerticalAlignment="Center" /><TextBlock Text="{Binding ModeLabel}" FontSize="11" Foreground="{DynamicResource SecondaryBrush}" /></StackPanel></Border>
+            <Button Classes="outlined" Command="{Binding LogoutCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"><StackPanel Orientation="Horizontal" Spacing="10"><c:AppIcon Kind="lock" Width="17" Height="17" /><TextBlock Text="Khóa phiên" FontSize="12" /></StackPanel></Button>
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <Grid Grid.Column="1" RowDefinitions="72,*">
+        <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1" Padding="24,0">
+          <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="14" VerticalAlignment="Center">
+            <StackPanel Spacing="4" VerticalAlignment="Center"><TextBlock Text="{Binding Room}" FontSize="13" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" /><TextBlock Text="Không gian quản lý" Classes="caption" FontSize="10" /></StackPanel>
+            <Button Grid.Column="1" Classes="outlined" Command="{Binding GlobalSearchCommand}" ToolTip.Tip="Tìm nhanh thiết bị và người mượn (Ctrl+K)">
+              <StackPanel Orientation="Horizontal" Spacing="9"><c:AppIcon Kind="search" Width="17" Height="17" /><TextBlock Text="Tìm nhanh" FontSize="12" /><TextBlock Text="Ctrl K" FontSize="10" Foreground="{DynamicResource SecondaryBrush}" VerticalAlignment="Center" /></StackPanel>
+            </Button>
+            <Button Grid.Column="2" Classes="icon" ToolTip.Tip="Thông báo gần đây">
+              <Button.Flyout><Flyout><StackPanel Width="330" Spacing="14"><TextBlock Text="Thông báo gần đây" FontSize="18" FontWeight="SemiBold" /><TextBlock IsVisible="{Binding !HasNotifications}" Text="Chưa có thông báo từ lần tải gần nhất." Classes="caption" TextWrapping="Wrap" /><ScrollViewer MaxHeight="330"><ItemsControl ItemsSource="{Binding Notifications}"><ItemsControl.ItemTemplate><DataTemplate x:DataType="x:String"><TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,0,0,12" FontSize="12" /></DataTemplate></ItemsControl.ItemTemplate></ItemsControl></ScrollViewer></StackPanel></Flyout></Button.Flyout>
+              <Grid><c:AppIcon Kind="bell" Width="21" Height="21" /><Border Background="#C24957" CornerRadius="8" Width="16" Height="16" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="13,-5,-6,0" IsVisible="{Binding HasNotifications}"><TextBlock Text="{Binding Notifications.Count}" FontSize="8" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border></Grid>
+            </Button>
+            <Grid Grid.Column="3" ColumnDefinitions="Auto,*" ColumnSpacing="10" VerticalAlignment="Center">
+              <Border Background="{DynamicResource PrimaryContainerBrush}" CornerRadius="18" Width="36" Height="36"><TextBlock Text="{Binding UserInitial}" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="15" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+              <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center" MaxWidth="150"><TextBlock Text="{Binding ActorLabel}" FontSize="11" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" /><TextBlock Text="Tài khoản đang hoạt động" Classes="caption" FontSize="9" /></StackPanel>
+            </Grid>
+          </Grid>
+        </Border>
+
+        <ScrollViewer Grid.Row="1">
+          <StackPanel Margin="24" Spacing="20" MaxWidth="1480">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+              <StackPanel Spacing="7">
+                <TextBlock Text="{Binding Breadcrumb}" Classes="caption" FontSize="11" />
+                <TextBlock Text="{Binding Title}" FontSize="29" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding Description}" Foreground="{DynamicResource SecondaryBrush}" FontSize="12" TextWrapping="Wrap" MaxWidth="650" HorizontalAlignment="Left" />
+              </StackPanel>
+              <Border Grid.Column="1" Classes="chip" VerticalAlignment="Top" Margin="0,16,0,0"><StackPanel Orientation="Horizontal" Spacing="7"><c:AppIcon Kind="calendar" Width="14" Height="14" Foreground="{DynamicResource SecondaryBrush}" /><TextBlock Text="{Binding TodayLabel}" Classes="caption" FontSize="10" /></StackPanel></Border>
+            </Grid>
+
+            <ItemsControl ItemsSource="{Binding Actions}">
+              <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:ToolbarAction"><Button Classes.primary="{Binding Primary}" Command="{Binding Command}" Margin="0,0,8,4"><StackPanel Orientation="Horizontal" Spacing="8"><c:AppIcon Kind="{Binding Icon}" Width="17" Height="17" /><TextBlock Text="{Binding Label}" FontSize="12" /></StackPanel></Button></DataTemplate></ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <Border Classes="card" Padding="14">
+              <StackPanel Spacing="10">
+                <Grid IsVisible="{Binding !IsDashboard}" ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
+                  <Grid><TextBox Text="{Binding Search}" PlaceholderText="Tìm theo tên hoặc mã..." Name="SearchInput" Padding="38,10,12,10" /><c:AppIcon Kind="search" Width="17" Height="17" Foreground="{DynamicResource SecondaryBrush}" IsHitTestVisible="False" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="13,0" /></Grid>
+                  <ComboBox Grid.Column="1" ItemsSource="{Binding Filters}" SelectedItem="{Binding StatusFilter}" MinWidth="115" FontSize="12" />
+                  <ComboBox Grid.Column="2" ItemsSource="{Binding SortOptions}" SelectedItem="{Binding Sort}" MinWidth="130" FontSize="12" />
+                  <Button Grid.Column="3" Classes="icon" Command="{Binding RefreshCommand}" ToolTip.Tip="Tải lại dữ liệu"><c:AppIcon Kind="refresh" Width="18" Height="18" /></Button>
+                </Grid>
+                <WrapPanel IsVisible="{Binding ShowPeriod}">
+                  <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="4,0,18,0"><c:AppIcon Kind="calendar" Width="17" Height="17" Foreground="{DynamicResource PrimaryTextBrush}" /><TextBlock Text="Khoảng thời gian" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" /></StackPanel>
+                  <TextBox Width="158" Text="{Binding DateFrom}" PlaceholderText="Từ dd/MM/yyyy HH:mm" FontSize="12" />
+                  <c:AppIcon Kind="arrow-right" Width="17" Height="17" Foreground="{DynamicResource SecondaryBrush}" VerticalAlignment="Center" Margin="12,0" />
+                  <TextBox Width="158" Text="{Binding DateTo}" PlaceholderText="Đến dd/MM/yyyy HH:mm" FontSize="12" />
+                  <Button Command="{Binding RefreshCommand}" Margin="12,0,0,0"><StackPanel Orientation="Horizontal" Spacing="7"><c:AppIcon Kind="filter" Width="15" Height="15" /><TextBlock Text="Áp dụng" FontSize="12" /></StackPanel></Button>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+
+            <Border IsVisible="{Binding HasError}" Background="{DynamicResource MutedSurfaceBrush}" CornerRadius="14" Padding="16"><Grid ColumnDefinitions="24,*" ColumnSpacing="12"><c:AppIcon Kind="help" Foreground="{DynamicResource ErrorBrush}" /><TextBlock Grid.Column="1" Text="{Binding Error}" Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" FontSize="12" /></Grid></Border>
+            <Border IsVisible="{Binding HasMessage}" Background="{DynamicResource MutedSurfaceBrush}" CornerRadius="14" Padding="16"><Grid ColumnDefinitions="24,*" ColumnSpacing="12"><c:AppIcon Kind="check" Foreground="{DynamicResource SuccessBrush}" /><TextBlock Grid.Column="1" Text="{Binding Message}" TextWrapping="Wrap" FontSize="12" LineHeight="20" /></Grid></Border>
+            <ProgressBar IsVisible="{Binding Busy}" IsIndeterminate="True" Height="3" />
+
+            <views:DashboardView IsVisible="{Binding IsDashboard}" />
+
+            <Border Classes="card" IsVisible="{Binding IsCalendar}">
+              <StackPanel Spacing="18">
+                <Grid ColumnDefinitions="Auto,*,Auto"><Button Classes="icon" Command="{Binding PreviousWeekCommand}" ToolTip.Tip="Tuần trước"><c:AppIcon Kind="arrow-left" Width="18" Height="18" /></Button><TextBlock Grid.Column="1" Text="{Binding WeekTitle}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold" /><Button Grid.Column="2" Classes="icon" Command="{Binding NextWeekCommand}" ToolTip.Tip="Tuần sau"><c:AppIcon Kind="arrow-right" Width="18" Height="18" /></Button></Grid>
+                <ScrollViewer HorizontalScrollBarVisibility="Auto"><ItemsControl ItemsSource="{Binding WeekDays}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="7" /></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:CalendarDay"><Border Background="{DynamicResource InputBrush}" CornerRadius="14" Padding="12" MinWidth="125" Margin="3"><StackPanel Spacing="12"><TextBlock Text="{Binding Date}" FontSize="12" FontWeight="SemiBold" /><ItemsControl ItemsSource="{Binding Bookings}"><ItemsControl.ItemTemplate><DataTemplate x:DataType="x:String"><Border Background="{DynamicResource PrimaryContainerBrush}" CornerRadius="10" Padding="8" Margin="0,0,0,8"><TextBlock Text="{Binding}" TextWrapping="Wrap" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="11" /></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl></StackPanel></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl></ScrollViewer>
+              </StackPanel>
+            </Border>
+
+            <Border Classes="card" IsVisible="{Binding IsEmpty}" Padding="36">
+              <StackPanel Spacing="14" HorizontalAlignment="Center" MaxWidth="420">
+                <Border Background="{DynamicResource PrimaryContainerBrush}" Width="72" Height="72" CornerRadius="24" HorizontalAlignment="Center"><c:AppIcon Kind="{Binding PageIcon}" Width="32" Height="32" Foreground="{DynamicResource PrimaryTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+                <TextBlock Text="Chưa có dữ liệu phù hợp" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                <TextBlock Text="Thử đổi bộ lọc, hoặc bắt đầu với thao tác thêm ở phía trên." Foreground="{DynamicResource SecondaryBrush}" TextAlignment="Center" TextWrapping="Wrap" FontSize="12" />
+                <Button Command="{Binding RefreshCommand}" HorizontalAlignment="Center"><StackPanel Orientation="Horizontal" Spacing="8"><c:AppIcon Kind="refresh" Width="16" Height="16" /><TextBlock Text="Tải lại dữ liệu" FontSize="12" /></StackPanel></Button>
+              </StackPanel>
+            </Border>
+
+            <Border Classes="card" Padding="0" IsVisible="{Binding !IsEmpty}">
+              <StackPanel>
+                <Grid ColumnDefinitions="*,Auto" Margin="22,20"><TextBlock Text="{Binding TableTitle}" Classes="sectionTitle" /><Border Grid.Column="1" Classes="chip"><StackPanel Orientation="Horizontal" Spacing="5"><TextBlock Text="{Binding Rows.Count}" FontSize="11" FontWeight="SemiBold" /><TextBlock Text="hiển thị" FontSize="11" Foreground="{DynamicResource SecondaryBrush}" /></StackPanel></Border></Grid>
+                <Border Background="{DynamicResource InputBrush}" Padding="22,12"><Grid ColumnDefinitions="150,1.2*,1.8*,110,120"><TextBlock Text="MÃ" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryBrush}" /><TextBlock Grid.Column="1" Text="TÊN / NGƯỜI NHẬN" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryBrush}" /><TextBlock Grid.Column="2" Text="THÔNG TIN" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryBrush}" /><TextBlock Grid.Column="3" Text="TRẠNG THÁI" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryBrush}" /><TextBlock Grid.Column="4" Text="GHI NHẬN" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryBrush}" /></Grid></Border>
+                <ListBox Classes="dataList" ItemsSource="{Binding Rows}" SelectedItem="{Binding SelectedRow}" MaxHeight="480">
+                  <ListBox.ItemTemplate><DataTemplate x:DataType="vm:DisplayRow">
+                    <Grid ColumnDefinitions="150,1.2*,1.8*,110,120" MinHeight="40">
+                      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="9" Margin="0,0,10,0"><Border Background="{DynamicResource MutedSurfaceBrush}" CornerRadius="11" Width="32" Height="32" VerticalAlignment="Center"><c:AppIcon Kind="{Binding Icon}" Foreground="{DynamicResource PrimaryTextBrush}" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border><TextBlock Grid.Column="1" Text="{Binding Code}" FontSize="10" FontWeight="Medium" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" /></Grid>
+                      <TextBlock Grid.Column="1" Text="{Binding Name}" TextWrapping="Wrap" FontSize="12" FontWeight="Medium" MaxLines="2" TextTrimming="CharacterEllipsis" Margin="0,0,12,0" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="2" Text="{Binding Details}" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" FontSize="11" LineHeight="18" Margin="0,0,14,0" Foreground="{DynamicResource SecondaryBrush}" VerticalAlignment="Center" />
+                      <Border Grid.Column="3" Background="{Binding StatusBackground}" CornerRadius="10" Padding="8,5" HorizontalAlignment="Left" VerticalAlignment="Center" MaxWidth="104"><TextBlock Text="{Binding Status}" Foreground="{Binding StatusForeground}" FontSize="10" FontWeight="Medium" TextWrapping="Wrap" /></Border>
+                      <TextBlock Grid.Column="4" Text="{Binding Metric}" FontSize="11" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                    </Grid>
+                  </DataTemplate></ListBox.ItemTemplate>
+                </ListBox>
+                <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Padding="20,12"><Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8"><TextBlock Text="{Binding PageLabel}" Classes="caption" FontSize="10" VerticalAlignment="Center" /><Button Classes="icon" Command="{Binding PreviousPageCommand}" ToolTip.Tip="Trang trước"><c:AppIcon Kind="arrow-left" Width="17" Height="17" /></Button><Button Classes="icon" Command="{Binding NextPageCommand}" ToolTip.Tip="Trang sau"><c:AppIcon Kind="arrow-right" Width="17" Height="17" /></Button></Grid></Border>
+              </StackPanel>
+            </Border>
+            <Border Classes="card" IsVisible="{Binding HasSelection}"><Grid ColumnDefinitions="*,Auto" ColumnSpacing="20"><StackPanel Spacing="12"><StackPanel Orientation="Horizontal" Spacing="8"><c:AppIcon Kind="report" Foreground="{DynamicResource PrimaryTextBrush}" Width="18" Height="18" /><TextBlock Text="Chi tiết đã chọn" Classes="sectionTitle" /></StackPanel><TextBlock Text="{Binding SelectionDetails}" TextWrapping="Wrap" FontSize="12" LineHeight="21" /></StackPanel><Image Grid.Column="1" Source="{Binding SelectedImage}" MaxWidth="200" MaxHeight="160" Stretch="Uniform" /></Grid></Border>
+          </StackPanel>
+        </ScrollViewer>
+      </Grid>
+    </Grid>
+  </Grid>
+</Window>
