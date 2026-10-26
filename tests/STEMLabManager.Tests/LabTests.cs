@@ -115,6 +115,45 @@ public sealed class LabTests : IAsyncLifetime
     {await service.SaveSettingAsync("llm.secret","private-key-123");Assert.DoesNotContain("llm.secret",(await service.SettingsAsync()).Keys);Assert.Equal("private-key-123",await service.ReadLlmKeyAsync());await using var db=service.Db();Assert.DoesNotContain("private-key-123",(await db.Settings.SingleAsync(x=>x.Key=="llm.secret")).Value);}
     [Fact] public async Task ReportsExcelPdfQrAndImportUseRealFiles()
     {await Asset(AssetKind.Unit);foreach(var extension in new[]{"csv","xlsx","pdf"}){var file=Path.Combine(directory,"report."+extension);await service.ExportAsync("assets",file,DateTime.UtcNow.AddDays(-1),DateTime.UtcNow.AddDays(1));Assert.True(new FileInfo(file).Length>100);}var qr=Path.Combine(directory,"qr.png");await service.ExportQrAsync("B001",qr);Assert.Equal(new byte[]{137,80,78,71},File.ReadAllBytes(qr).Take(4));}
+    [Fact] public async Task AggregateReportsExportSchoolHeaderAndCorrectUsage()
+    {
+        var asset=await Asset(AssetKind.Bulk,4,"REPORT-A");await Issue(asset,2);
+        var from=DateTime.UtcNow.AddDays(-1);var to=DateTime.UtcNow.AddDays(1);
+        foreach(var (report,expectedCode) in new[]{("usage-by-asset","REPORT-A"),("usage-by-borrower","B001")})
+        {
+            var file=Path.Combine(directory,report+".csv");await service.ExportAsync(report,file,from,to);
+            var rows=Csv.Parse(await File.ReadAllTextAsync(file));
+            Assert.Equal("Phường Hạ Long",rows[0][0]);Assert.Equal("Trường THCS Trọng Điểm",rows[1][0]);Assert.Equal("BÁO CÁO THIẾT BỊ PHÒNG STEM LAB",rows[2][0]);
+            Assert.Contains(rows.Skip(6),row=>row.Contains(expectedCode));
+            Assert.Contains(rows.Skip(6).SelectMany(row=>row),cell=>cell=="2");
+        }
+    }
+    [Fact] public async Task StockAdjustmentReportIncludesQuantitiesReasonsAndProtectsManagerData()
+    {
+        var asset=await Asset(AssetKind.Bulk,4,"STOCK-A");
+        await service.AdjustStockAsync(asset,3,"Nhập bổ sung");
+        await service.AdjustStockAsync(asset,-1,"Điều chỉnh do hư hỏng");
+        var from=DateTime.UtcNow.AddDays(-1);var to=DateTime.UtcNow.AddDays(1);var file=Path.Combine(directory,"stock-adjustments.csv");
+        await service.ExportAsync("stock-adjustments",file,from,to);
+        var rows=Csv.Parse(await File.ReadAllTextAsync(file));
+        Assert.Equal(new[]{"STT","Tên thiết bị","Số lượng","Lý do"},rows[5]);
+        Assert.Contains(rows.Skip(6),row=>row[1]=="Cảm biến điện"&&row[2]=="4 (nhập)"&&row[3]=="Tồn ban đầu");
+        Assert.Contains(rows.Skip(6),row=>row[1]=="Cảm biến điện"&&row[2]=="3 (nhập)"&&row[3]=="Nhập bổ sung");
+        Assert.Contains(rows.Skip(6),row=>row[1]=="Cảm biến điện"&&row[2]=="1 (giảm)"&&row[3]=="Điều chỉnh do hư hỏng");
+        await service.SaveUserAsync(null,"student","Student",Role.Viewer,Password,true);service.Logout();await service.LoginAsync("student",Password);
+        await Assert.ThrowsAsync<BusinessException>(()=>service.ExportAsync("stock-adjustments",Path.Combine(directory,"forbidden.csv"),from,to));
+    }
+    [Fact] public async Task OverdueReportsGroupOutstandingEquipment()
+    {
+        var asset=await Asset(AssetKind.Bulk,4,"LATE-A");
+        var loanId=await Issue(asset,3);await using(var db=service.Db()){var loan=await db.Loans.SingleAsync(x=>x.Id==loanId);loan.DueUtc=DateTime.UtcNow.AddDays(-2);await db.SaveChangesAsync();}
+        foreach(var (report,expectedCode) in new[]{("overdue-by-asset","LATE-A"),("overdue-by-borrower","B001")})
+        {
+            var file=Path.Combine(directory,report+".csv");await service.ExportAsync(report,file,DateTime.UtcNow.AddDays(-30),DateTime.UtcNow.AddDays(1));
+            var rows=Csv.Parse(await File.ReadAllTextAsync(file));Assert.Contains(rows.Skip(6),row=>row.Contains(expectedCode));
+            Assert.Contains(rows.Skip(6).SelectMany(row=>row),cell=>cell=="3");
+        }
+    }
     [Fact] public async Task AnalyticsChangesWithDateRangeAndUsesActualLoans()
     {var a=await Asset(AssetKind.Unit);await Issue(a);var current=await service.AnalyticsAsync(DateTime.UtcNow.AddDays(-1),DateTime.UtcNow.AddDays(1));Assert.Equal(1,current.TotalLoans);var past=await service.AnalyticsAsync(DateTime.UtcNow.AddDays(-30),DateTime.UtcNow.AddDays(-20));Assert.Equal(0,past.TotalLoans);}
     [Fact] public async Task DemoIsForbiddenInProduction()

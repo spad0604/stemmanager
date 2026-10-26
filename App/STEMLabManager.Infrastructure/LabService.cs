@@ -25,8 +25,9 @@ public sealed partial class LabService : ILabService
     }
     internal LabDbContext Db()
     {
-        var connection = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = databasePath, ForeignKeys = true, DefaultTimeout = 30, Pooling = false }.ToString());
-        return new(new DbContextOptionsBuilder<LabDbContext>().UseSqlite(connection).Options);
+        var connectionString = new SqliteConnectionStringBuilder { DataSource = databasePath, ForeignKeys = true, DefaultTimeout = 30, Pooling = false }.ToString();
+        // Let EF create and own the connection so disposing each context releases the SQLite file handle on Windows.
+        return new(new DbContextOptionsBuilder<LabDbContext>().UseSqlite(connectionString).Options);
     }
     public async Task InitializeAsync()
     {
@@ -38,6 +39,11 @@ public sealed partial class LabService : ILabService
             if(File.Exists(Path.Combine(DataDirectory,"secrets.key")))File.Copy(Path.Combine(DataDirectory,"secrets.key"),rollback+".key");
         }
         await db.Database.MigrateAsync();
+        // Upgrade the former OFF-by-default value only when nobody explicitly changed it.
+        // A restored backup deliberately remains OFF until its biometric consent is reviewed.
+        var faceSetting=await db.Settings.SingleOrDefaultAsync(x=>x.Key=="face.enabled");
+        if(faceSetting?.Value=="false" && !await db.Audit.AnyAsync(x=>x.Action=="SaveSetting" && x.EntityType=="AppSetting" && x.Details=="face.enabled") && !await db.Audit.AnyAsync(x=>x.Action=="Restore"))
+        {faceSetting.Value="true";await db.SaveChangesAsync();}
         await db.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");
         await db.Database.ExecuteSqlRawAsync("PRAGMA busy_timeout=30000;");
     }
@@ -84,7 +90,7 @@ public sealed partial class LabService : ILabService
             Rules.Require(!await db.Users.AnyAsync(), "Hệ thống đã được thiết lập.");
             var user = new UserAccount { Username = username.Trim().ToLowerInvariant(), DisplayName = displayName.Trim(), PasswordHash = hash, Role = Role.SuperAdmin };
             db.Users.Add(user); db.Categories.Add(new Category { Name = "Thiết bị chung" }); db.Locations.Add(new Location { Name = "Phòng STEM / Kệ 1" });
-            db.Settings.AddRange(new AppSetting { Key = "room", Value = room.Trim() }, new AppSetting { Key = "face.enabled", Value = "false" }, new AppSetting { Key = "llm.enabled", Value = "false" }, new AppSetting { Key = "teacher.issue", Value = "true" });
+            db.Settings.AddRange(new AppSetting { Key = "room", Value = room.Trim() }, new AppSetting { Key = "face.enabled", Value = "true" }, new AppSetting { Key = "llm.enabled", Value = "false" }, new AppSetting { Key = "teacher.issue", Value = "true" });
             await db.SaveChangesAsync(); CurrentActor = new(user.Id,user.Username,user.DisplayName,user.Role); Audit(db,"Setup","System",null); await db.SaveChangesAsync(); await tx.CommitAsync();
         }
         finally { gate.Release(); }
@@ -154,7 +160,7 @@ public sealed partial class LabService : ILabService
             int total,available;
             if(a.Kind==AssetKind.Unit) { total=await db.Units.CountAsync(x=>x.AssetId==a.Id && x.Status!=UnitStatus.Retired); available=await db.Units.CountAsync(x=>x.AssetId==a.Id && x.Status==UnitStatus.Available); }
             else { total=await BalanceAsync(db,a.Id); available=total-await OpenQuantityAsync(db,a.Id); }
-            result.Add(new(a.Id,a.Code,a.Name,a.Kind,categories[a.CategoryId],locations[a.LocationId],a.UnitOfMeasure,total,available,a.IsArchived));
+            result.Add(new(a.Id,a.Code,a.Name,a.Kind,categories[a.CategoryId],locations[a.LocationId],a.UnitOfMeasure,total,available,a.IsArchived,a.ImagePath));
         }
         return result;
     }
@@ -219,7 +225,7 @@ public sealed partial class LabService : ILabService
     public async Task<IReadOnlyList<BorrowerRow>> BorrowersAsync(string search="")
     {
         await using var db=Db(); await VerifyActorAsync(db,Permission.Read); var list=await db.Borrowers.AsNoTracking().OrderBy(x=>x.Code).ToListAsync(); var loans=await db.Loans.AsNoTracking().ToListAsync();
-        return list.Where(x=>Matches(search,x.Code,x.DisplayName,x.ClassName)).Select(x=>new BorrowerRow(x.Id,CurrentActor!.Role==Role.Viewer?"Ẩn":x.Code,CurrentActor.Role==Role.Viewer?$"Người mượn #{x.Id}":x.DisplayName,CurrentActor.Role==Role.Viewer?"Ẩn":x.ClassName,x.Type,Access.Allows(CurrentActor.Role,Permission.PersonalData)?x.Contact:null,x.IsActive,loans.Count(l=>l.BorrowerId==x.Id && l.Status==LoanStatus.Open),loans.Count(l=>l.BorrowerId==x.Id && l.DueUtc<DateTime.UtcNow && l.Status==LoanStatus.Open))).ToList();
+        return list.Where(x=>Matches(search,x.Code,x.DisplayName,x.ClassName)).Select(x=>new BorrowerRow(x.Id,CurrentActor!.Role==Role.Viewer?"Ẩn":x.Code,CurrentActor.Role==Role.Viewer?$"Người mượn #{x.Id}":x.DisplayName,CurrentActor.Role==Role.Viewer?"Ẩn":x.ClassName,"Người mượn",Access.Allows(CurrentActor.Role,Permission.PersonalData)?x.Contact:null,x.IsActive,loans.Count(l=>l.BorrowerId==x.Id && l.Status==LoanStatus.Open),loans.Count(l=>l.BorrowerId==x.Id && l.DueUtc<DateTime.UtcNow && l.Status==LoanStatus.Open))).ToList();
     }
     public Task<long> SaveBorrowerAsync(long? id,BorrowerInput input) => WriteAsync(Permission.ManageBorrowers,async db=>
     {

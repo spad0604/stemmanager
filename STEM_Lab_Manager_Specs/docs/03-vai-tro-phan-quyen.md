@@ -2,10 +2,10 @@
 
 > Nguồn: đặc tả STEM Lab Manager v1.0. Quy tắc triển khai chung xem [`../AGENTS.md`](../AGENTS.md).
 
-Dùng RBAC theo nguyên tắc tối thiểu quyền: SUPER_ADMIN (quản trị cấu hình), LAB_MANAGER (giáo viên phụ trách), TEACHER (giáo viên sử dụng), VIEWER (chỉ đọc/báo cáo). STUDENT là đối tượng mượn trong dữ liệu, không bắt buộc có tài khoản đăng nhập desktop.
+Dùng RBAC theo nguyên tắc tối thiểu quyền: SUPER_ADMIN (quản trị cấu hình), LAB_MANAGER (giáo viên phụ trách), TEACHER (giáo viên sử dụng), VIEWER (role Học sinh, quyền xem giới hạn). STUDENT là đối tượng mượn trong dữ liệu, không bắt buộc có tài khoản đăng nhập desktop.
 
 
-| Hành động | Admin | Quản lý | Giáo viên | Chỉ đọc |
+| Hành động | Admin | Quản lý | Giáo viên | Học sinh |
 | --- | --- | --- | --- | --- |
 | Xem danh mục, dashboard | ✓ | ✓ | ✓ | ✓ |
 | Thêm/sửa thiết bị | ✓ | ✓ | — | — |
@@ -28,3 +28,9 @@ Dùng RBAC theo nguyên tắc tối thiểu quyền: SUPER_ADMIN (quản trị c
 - Admin không được xóa audit log bằng UI. Phải có nhật ký cả hành động admin.
 - Mọi quyền phải được kiểm tra ở application/domain service, không chỉ ẩn nút giao diện.
 - Không dùng nhận diện khuôn mặt làm xác thực đăng nhập admin; dùng mật khẩu mạnh và khóa phiên.
+
+## 3.2. Tab hiển thị theo vai trò
+
+- **Quản trị** và **Quản lý** mới thấy tab **Nhập kho & kiểm kê** và **Bảo trì**. Các tab này chứa điều chỉnh tồn, xác nhận kiểm kê, mở/hoàn tất bảo trì.
+- **Giáo viên** và **Học sinh** không thấy các tab đó. Giáo viên chỉ thấy giao dịch mượn–trả/đặt trước theo quyền được cấp; quyền bàn giao có thể bị tắt trong cấu hình.
+- **Học sinh** dùng Tổng quan, danh mục/thiết bị và báo cáo tổng hợp; không thấy tab **Phân tích AI**, danh sách **Người mượn** hoặc thao tác ghi dữ liệu. Các báo cáo tổng hợp không hiển thị tên/lớp/liên hệ người mượn.

@@ -1,5 +1,14 @@
 # Kiểm chứng triển khai — 12/10/2026
 
+## Bổ sung kiểm tra Windows — 13/10/2026
+
+- SDK: `global.json` dùng roll-forward `latestFeature`; máy chọn .NET SDK 10.0.401 thay cho phiên bản 10.0.112 chưa cài.
+- Sau khi thêm model SSA local: `dotnet test STEMManager.sln -c Release --no-restore` đạt 48 bài business/integration/model và 9 bài UI, không lỗi.
+- SSA: test dữ liệu dưới 21 ngày bị từ chối; chuỗi 35 ngày tạo đủ 7 dự báo và tính MAE holdout. UI có biểu đồ 7 ngày và ghi rõ model chạy cục bộ.
+- Camera trên Windows: `Integrated Camera` và YuNet hoạt động; một lượt smoke test mở camera, nhận 1 khuôn mặt. Chỉ kiểm tra detector; ảnh trong bộ nhớ đã xóa, không enroll/lưu embedding.
+- Thử thách camera sau sửa: một phiên DirectShow duy trì mở trong lúc preview; smoke test đọc liên tiếp 12 khung hình, 12 hash khác nhau; không lưu frame.
+- Đây là smoke test một lượt trên máy hiện tại; chưa thay thế đánh giá false-match và chất lượng ảnh đăng ký dưới các điều kiện sáng/góc mặt khác nhau.
+
 Môi trường: Ubuntu 26.04 x64, .NET SDK 10.0.112. Kết quả dưới đây chỉ áp dụng các lệnh đã chạy, không thay thế nghiệm thu Windows/phần cứng thật.
 
 | Kiểm tra | Kết quả |
@@ -34,4 +43,4 @@ Test TRX ở `tests/*/TestResults`; ảnh chụp test ở `tests/STEMLabManager.
 
 Tài liệu PDF và mẫu XLSX ở `artifacts/docs`. Windows staging ở `artifacts/windows/app`; thư mục `cross-publish-before-design-isolation` là bản staging cũ được giữ để phục hồi. Không chứa DB vận hành/API key/mặt trong payload.
 
-Các gate còn cần môi trường thực: chạy script Windows tạo Setup.exe và kiểm cài/gỡ/update offline máy Windows 10/11 sạch; camera/liveness/false-match với consent hợp lệ; thử timeout LLM thực và luồng UI → service → endpoint thật (smoke test adapter đã đạt); kiểm fonts/native/DPI bằng mắt trên Windows; diễn tập demo 5–7 phút, rà soát license/native redistributables và chính sách bảo vệ dữ liệu của trường. Chưa đánh dấu các gate này hoàn thành.
+Các gate còn cần môi trường thực: chạy script Windows tạo Setup.exe và kiểm cài/gỡ/update offline máy Windows 10/11 sạch; chất lượng ảnh chụp một lần và false-match với consent hợp lệ; thử timeout LLM thực và luồng UI → service → endpoint thật (smoke test adapter đã đạt); kiểm fonts/native/DPI bằng mắt trên Windows; diễn tập demo 5–7 phút, rà soát license/native redistributables và chính sách bảo vệ dữ liệu của trường. Chưa đánh dấu các gate này hoàn thành.

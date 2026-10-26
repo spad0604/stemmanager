@@ -1,0 +1,21 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:STEMLabManager.Desktop.ViewModels" xmlns:c="using:STEMLabManager.Desktop.Controls"
+             x:Class="STEMLabManager.Desktop.Views.DateTimeField" x:DataType="vm:FormField">
+  <Button Classes="dateTimeField" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+      <TextBlock Text="{Binding DateTimeDisplay}" VerticalAlignment="Center" FontSize="12" />
+      <c:AppIcon Grid.Column="1" Kind="calendar" Width="17" Height="17" Foreground="{DynamicResource SecondaryBrush}" VerticalAlignment="Center" />
+    </Grid>
+    <Button.Flyout>
+      <Flyout Placement="Bottom">
+        <Border Classes="card" Padding="16" Width="330">
+          <StackPanel Spacing="12">
+            <TextBlock Text="Chọn ngày và giờ" FontSize="13" FontWeight="SemiBold" />
+            <DatePicker SelectedDate="{Binding Date}" HorizontalAlignment="Stretch" />
+            <TimePicker SelectedTime="{Binding Time}" ClockIdentifier="24HourClock" MinuteIncrement="5" UseSeconds="False" HorizontalAlignment="Stretch" />
+          </StackPanel>
+        </Border>
+      </Flyout>
+    </Button.Flyout>
+  </Button>
+</UserControl>

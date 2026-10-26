@@ -1,9 +1,9 @@
 using STEMLabManager.Domain;
 namespace STEMLabManager.Application;
 
-public sealed record AssetRow(long Id, string Code, string Name, AssetKind Kind, string Category, string Location, string Unit, int Total, int Available, bool Archived);
+public sealed record AssetRow(long Id, string Code, string Name, AssetKind Kind, string Category, string Location, string Unit, int Total, int Available, bool Archived, string? ImagePath = null);
 public sealed record BorrowerRow(long Id, string Code, string Name, string ClassName, string Type, string? Contact, bool Active, int OpenLoans, int OverdueLoans);
-public sealed record LoanRow(long Id, string Code, string Borrower, string Staff, DateTime IssuedUtc, DateTime DueUtc, LoanStatus Status, string Purpose, IReadOnlyList<LoanLineRow> Lines)
+public sealed record LoanRow(long Id, string Code, string Borrower, string Staff, DateTime IssuedUtc, DateTime DueUtc, LoanStatus Status, string Purpose, IReadOnlyList<LoanLineRow> Lines, long? BorrowerId = null)
 {
     public bool Overdue => Status == LoanStatus.Open && DueUtc < DateTime.UtcNow;
     public string Summary => string.Join("; ", Lines.Select(l => l.Consumable?$"{l.Asset}: {l.QuantityIssued} tiêu hao":$"{l.Asset}: {l.QuantityIssued} mượn, {l.QuantityReturned} đã trả"));
@@ -13,7 +13,7 @@ public sealed record ReservationRow(long Id, string Code, string Borrower, DateT
 public sealed record Analytics(DateTime StartUtc, DateTime EndUtc, int Available, int OpenLoans, int Overdue, int TodayReservations, int TotalLoans, int UniqueBorrowers, double OverdueRate, IReadOnlyList<MetricPoint> Daily, IReadOnlyList<MetricPoint> TopAssets, IReadOnlyList<string> Notifications, double Utilization = 0, int UnfulfilledRequests = 0);
 public sealed record MetricPoint(string Label, double Value);
 public sealed record AssetInput(string Code, string Name, AssetKind Kind, long CategoryId, long LocationId, string Unit, int InitialQuantity = 0, int MinimumStock = 0, string Description = "", string Manufacturer = "", string Model = "", string? ImagePath = null, DateTime? PurchasedUtc = null, decimal? ReferencePrice = null);
-public sealed record BorrowerInput(string Code, string Name, string ClassName, string Type = "Học sinh", string? Contact = null);
+public sealed record BorrowerInput(string Code, string Name, string ClassName, string Type = "Người mượn", string? Contact = null);
 public sealed record IssueLine(long AssetId, long? UnitId, int Quantity);
 public sealed record IssueRequest(long BorrowerId, DateTime DueUtc, string Purpose, IReadOnlyList<IssueLine> Lines, long? ReservationId = null);
 public sealed record ReturnInput(long LoanLineId, int Quantity, ReturnCondition Condition);

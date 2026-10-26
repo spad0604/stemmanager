@@ -27,7 +27,13 @@ if (-not $crtDirectory -or -not (Test-Path (Join-Path $crtDirectory 'msvcp140.dl
 }
 Copy-Item (Join-Path $crtDirectory '*.dll') artifacts/windows/app -Force
 $compiler = Get-Command ISCC.exe -ErrorAction SilentlyContinue
-$compilerPath = if ($compiler) { $compiler.Source } else { 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' }
+$compilerPath = if ($compiler) { $compiler.Source } else {
+    @(
+        'C:\Program Files (x86)\Inno Setup 6\ISCC.exe',
+        'C:\Program Files\Inno Setup 6\ISCC.exe',
+        (Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 6\ISCC.exe')
+    ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+}
 if (-not (Test-Path $compilerPath)) { throw 'Install Inno Setup 6 on the build machine. End users do not need it.' }
 & $compilerPath deploy/windows/STEMManager.iss
 if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed' }

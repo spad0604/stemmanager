@@ -22,7 +22,7 @@ phân nhóm sidebar rõ ràng, mọi nút có hành động thật.
 
 5. Nghiệp vụ đặt trước/mượn/trả atomic, không âm kho, không trùng unit.
 
-6. Face recognition mặc định OFF và có fallback; AI analytics local.
+6. Face embedding local mặc định ON cho lần thiết lập mới; chỉ enroll sau consent và có fallback QR/mã; AI analytics local.
 
 7. LLM API tùy chọn, không gửi PII/biometric, không cho tự chạy SQL.
 

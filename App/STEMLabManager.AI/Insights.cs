@@ -1,20 +1,66 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.ML;
+using Microsoft.ML.Data;
+using Microsoft.ML.Transforms.TimeSeries;
 using STEMLabManager.Application;
 using STEMLabManager.Domain;
 namespace STEMLabManager.AI;
 
+public sealed record LocalForecast(bool Ready,IReadOnlyList<MetricPoint> Points,double? BacktestMae,string Status);
+internal sealed class LoanCount { public float Value {get;set;} }
+internal sealed class ForecastOutput
+{
+    [ColumnName("Forecast"),VectorType(7)] public float[] Forecast {get;set;}=[];
+    [ColumnName("Lower"),VectorType(7)] public float[] Lower {get;set;}=[];
+    [ColumnName("Upper"),VectorType(7)] public float[] Upper {get;set;}=[];
+}
+
 public sealed class Insights(HttpClient client) : IExternalInsights
 {
-    public static string Local(Analytics a)
+    public static LocalForecast Forecast(IReadOnlyList<MetricPoint> daily,DateTime startUtc,DateTime endUtc)
     {
-        var days=Math.Max(1,(a.EndUtc-a.StartUtc).TotalDays);
-        var text=$"Nguồn: SQLite, {a.StartUtc.ToLocalTime():dd/MM/yyyy}–{a.EndUtc.ToLocalTime():dd/MM/yyyy}.\n"+
-            $"{a.TotalLoans} phiếu; {a.UniqueBorrowers} người mượn; tỷ lệ quá hạn {a.OverdueRate:P1}; sử dụng {a.Utilization:P1}.\n"+
-            $"Dự báo cơ sở 7 ngày: {a.TotalLoans/days*7:F1} phiếu (trung bình theo ngày trong kỳ).\n";
-        if(a.TopAssets.Count>0)text+=$"Thiết bị được xuất nhiều nhất: {a.TopAssets[0].Label} ({a.TopAssets[0].Value} đơn vị).\n";
-        text+=a.TotalLoans<30?"Dữ liệu ít: độ tin cậy thấp, chưa đủ kết luận về mùa vụ hoặc mua bổ sung.":"Độ tin cậy vừa: trung bình lịch sử không phản ánh thay đổi lịch học; rà soát tồn và các yêu cầu không đáp ứng trước khi mua.";
+        const int window=7,horizon=7;
+        var values=daily.Select(x=>(float)Math.Max(0,x.Value)).ToArray();
+        if(values.Length<21)return new(false,[],null,$"Cần ít nhất 21 ngày dữ liệu để ước tính; hiện có {values.Length} ngày.");
+        try
+        {
+            var ml=new MLContext(seed:17);
+            float[]? Backtest(int trainSize,int testSize)
+            {
+                var rows=values.Take(trainSize).Select(x=>new LoanCount{Value=x});
+                var data=ml.Data.LoadFromEnumerable(rows);
+                var estimator=ml.Forecasting.ForecastBySsa("Forecast","Value",window,trainSize,trainSize,testSize,
+                    confidenceLowerBoundColumn:"Lower",confidenceUpperBoundColumn:"Upper",confidenceLevel:0.95f);
+                var model=estimator.Fit(data);
+                return model.CreateTimeSeriesEngine<LoanCount,ForecastOutput>(ml).Predict().Forecast;
+            }
+            double? mae=null;
+            if(values.Length>=28)
+            {
+                var testSize=Math.Min(horizon,values.Length-21);
+                var heldOut=Backtest(values.Length-testSize,testSize);
+                if(heldOut?.Length>=testSize)mae=Enumerable.Range(0,testSize).Average(i=>Math.Abs(heldOut[i]-values[values.Length-testSize+i]));
+            }
+            var forecast=Backtest(values.Length,horizon);
+            if(forecast==null || forecast.Length!=horizon || forecast.Any(x=>!float.IsFinite(x)))
+                return new(false,[],mae,"Chưa thể ước tính nhu cầu từ dữ liệu hiện có. Biểu đồ số liệu thực tế vẫn dùng được.");
+            var first=startUtc.ToLocalTime().Date.AddDays(daily.Count);
+            var points=forecast.Select((value,i)=>new MetricPoint(first.AddDays(i).ToString("dd/MM"),Math.Max(0,Math.Round(value,1)))).ToArray();
+            var status=mae is { } error?$"Khi thử trên dữ liệu cũ, dự báo lệch trung bình khoảng {error:F1} phiếu mỗi ngày.":"Dữ liệu còn ít để kiểm tra độ chính xác của dự báo.";
+            return new(true,points,mae,status);
+        }
+        catch(Exception e) when(e is not OutOfMemoryException and not StackOverflowException)
+        {return new(false,[],null,"Chưa thể ước tính nhu cầu từ dữ liệu hiện có. Biểu đồ số liệu thực tế vẫn dùng được.");}
+    }
+    public static string Local(Analytics a,LocalForecast? forecast=null)
+    {
+        var text=$"Trong kỳ {a.StartUtc.ToLocalTime():dd/MM/yyyy}–{a.EndUtc.ToLocalTime():dd/MM/yyyy}, phòng ghi nhận {a.TotalLoans} phiếu mượn từ {a.UniqueBorrowers} người.\n"+
+            $"Có {a.Overdue} phiếu đang quá hạn ({a.OverdueRate:P1}); mức sử dụng thiết bị là {a.Utilization:P1}.\n"+
+            (forecast?.Ready==true?$"Tuần tới có thể có khoảng {forecast.Points.Sum(x=>x.Value):F0} lượt mượn.\n":"Chưa có đủ dữ liệu để ước tính nhu cầu tuần tới.\n");
+        if(a.TopAssets.Count>0)text+=$"Thiết bị được mượn nhiều nhất là {a.TopAssets[0].Label}, với {a.TopAssets[0].Value} lượt.\n";
+        text+=a.TotalLoans<30?"Dữ liệu hiện còn ít; hãy xem dự báo như gợi ý và kiểm tra lịch học, tồn kho trước khi quyết định.":"Dự báo dựa trên lịch sử nên có thể thay đổi theo lịch học; hãy đối chiếu với lịch đặt và tồn kho.";
         return text;
     }
     public static object Aggregate(Analytics a) => new

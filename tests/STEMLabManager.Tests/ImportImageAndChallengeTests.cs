@@ -1,5 +1,4 @@
 using SkiaSharp;
-using STEMLabManager.AI;
 using STEMLabManager.Infrastructure;
 using STEMLabManager.Domain;
 using Xunit;
@@ -7,11 +6,6 @@ namespace STEMLabManager.Tests;
 
 public sealed class ImportImageAndChallengeTests
 {
-    [Fact] public void MovementChallengeRejectsStaticAndWrongDirection()
-    {
-        var face=new DetectedFace(0,0,100,100,0.9f,[20,30,80,30,50,60,30,80,70,80]);var moved=face with{Landmarks=[20,30,80,30,60,60,30,80,70,80]};
-        Assert.Throws<BusinessException>(()=>LiveChallenge.Validate(face,face,1));Assert.Throws<BusinessException>(()=>LiveChallenge.Validate(face,moved,-1));LiveChallenge.Validate(face,moved,1);
-    }
     [Fact] public async Task AssetImportIsValidatedAndAtomic()
     {
         var directory=Path.Combine(Path.GetTempPath(),"stem-assets-"+Guid.NewGuid().ToString("N"));var service=new LabService(directory);

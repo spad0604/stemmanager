@@ -1,0 +1,11 @@
+[
+  {
+    "Name": "STEM Lab Manager",
+    "Projects": [
+      {
+        "Path": "App\\STEMLabManager.Desktop\\STEMLabManager.Desktop.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

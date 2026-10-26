@@ -1,6 +1,7 @@
 **/bin/
 **/obj/
 artifacts/
+.vs/
 *.db
 *.db-shm
 *.db-wal

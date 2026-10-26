@@ -5,15 +5,15 @@
     <ResourceDictionary>
       <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Light">
-          <SolidColorBrush x:Key="PageBrush" Color="#F5F7FC" />
+          <SolidColorBrush x:Key="PageBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF" />
-          <SolidColorBrush x:Key="NavigationBrush" Color="#F0F4FC" />
+          <SolidColorBrush x:Key="NavigationBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="TextBrush" Color="#1C2941" />
           <SolidColorBrush x:Key="SecondaryBrush" Color="#65758E" />
-          <SolidColorBrush x:Key="BorderBrush" Color="#E5EBF5" />
-          <SolidColorBrush x:Key="MutedSurfaceBrush" Color="#EBF0FA" />
-          <SolidColorBrush x:Key="InputBrush" Color="#F1F4FA" />
-          <SolidColorBrush x:Key="PrimaryContainerBrush" Color="#DFE9FF" />
+          <SolidColorBrush x:Key="BorderBrush" Color="#E4E8EF" />
+          <SolidColorBrush x:Key="MutedSurfaceBrush" Color="#F4F6FA" />
+          <SolidColorBrush x:Key="InputBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="PrimaryContainerBrush" Color="#EAF0FF" />
           <SolidColorBrush x:Key="PrimaryTextBrush" Color="#315BDB" />
           <SolidColorBrush x:Key="SuccessBrush" Color="#237658" />
           <SolidColorBrush x:Key="WarningBrush" Color="#9B660C" />

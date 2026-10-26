@@ -116,7 +116,9 @@ public sealed partial class LabService
                 var code=Get("Code").ToUpperInvariant(); var name=Get("Name");
                 if(code.Length==0 || code.Length>80 || name.Length==0 || name.Length>200) {errors.Add($"Dòng {i+1}: mã/tên thiếu hoặc quá dài.");continue;}
                 if(!seen.Add(code)) {errors.Add($"Dòng {i+1}: trùng mã {code}.");continue;}
-                rows.Add(new(code,name,Get("Class"),Get("Type")==""?"Học sinh":Get("Type"),Get("Contact")));
+                // Import files may still contain the legacy Type column, but borrower records
+                // now use one consistent persona throughout the application.
+                rows.Add(new(code,name,Get("Class"),"Người mượn",Get("Contact")));
             }
             return new ImportPreview(rows,errors);
         });
@@ -131,7 +133,9 @@ public sealed partial class LabService
     public async Task<string> ExportAsync(string report,string path,DateTime startUtc,DateTime endUtc)
     {
         Require(Permission.Reports); Rules.Interval(startUtc,endUtc);
-        if(report=="borrowers")Require(Permission.PersonalData);
+        if(report is "borrowers" or "usage-by-borrower" or "overdue-by-borrower")Require(Permission.PersonalData);
+        if(report=="stock-adjustments")Require(Permission.ManageAssets);
+        await using var db=Db();await VerifyActorAsync(db,Permission.Reports);
         List<string[]> rows;
         switch(report)
         {
@@ -140,9 +144,42 @@ public sealed partial class LabService
             case "loans": rows=[new[]{"Code","Borrower","Staff","Issued","Due","Status","Lines"},..(await LoansAsync(true)).Where(x=>x.IssuedUtc>=startUtc && x.IssuedUtc<endUtc).Select(x=>new[]{x.Code,x.Borrower,x.Staff,x.IssuedUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm"),x.DueUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm"),x.Status.ToString(),x.Summary})];break;
             case "reservations": rows=[new[]{"Code","Borrower","Start","End","Status"},..(await ReservationsAsync()).Where(x=>x.StartUtc>=startUtc && x.StartUtc<endUtc).Select(x=>new[]{x.Code,x.Borrower,x.StartUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm"),x.EndUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm"),x.Status.ToString()})];break;
             case "inventory": rows=[new[]{"Session","Created","Asset","Expected","Actual","Delta","Confirmed"},..(await InventoryAsync()).SelectMany(s=>s.Counts.Select(c=>new[]{s.Id.ToString(),s.CreatedUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm"),c.AssetId.ToString(),c.Expected.ToString(),c.Actual.ToString(),(c.Actual-c.Expected).ToString(),s.ConfirmedUtc?.ToString("O")??""}))];break;
+            case "stock-adjustments":
+            {
+                var entries=await db.Ledger.AsNoTracking().Where(x=>x.CreatedUtc>=startUtc&&x.CreatedUtc<endUtc&&(x.ReferenceType=="Initial"||x.ReferenceType=="Adjustment"||x.ReferenceType=="Inventory")).OrderBy(x=>x.CreatedUtc).ThenBy(x=>x.Id).ToListAsync();
+                var names=await db.Assets.AsNoTracking().ToDictionaryAsync(x=>x.Id,x=>x.Name);
+                rows=[new[]{"STT","Tên thiết bị","Số lượng","Lý do"},..entries.Select((x,i)=>new[]{(i+1).ToString(),names.GetValueOrDefault(x.AssetId,$"Thiết bị #{x.AssetId}"),$"{Math.Abs(x.QuantityDelta)} ({(x.QuantityDelta>=0?"nhập":"giảm")})",x.Reason})];break;
+            }
             case "analytics": var a=await AnalyticsAsync(startUtc,endUtc);rows=[new[]{"Metric","Value"},new[]{"Loans",a.TotalLoans.ToString()},new[]{"UniqueBorrowers",a.UniqueBorrowers.ToString()},new[]{"OverdueRate",a.OverdueRate.ToString("P1")},new[]{"Utilization",a.Utilization.ToString("P1")},..a.TopAssets.Select(x=>new[]{x.Label,x.Value.ToString()})];break;
+            case "usage-by-asset":
+            {
+                var loans=await db.Loans.AsNoTracking().Include(x=>x.Lines).Where(x=>x.IssuedUtc>=startUtc&&x.IssuedUtc<endUtc).ToListAsync();
+                var names=await db.Assets.AsNoTracking().ToDictionaryAsync(x=>x.Id,x=>new{x.Code,x.Name});
+                rows=[new[]{"Mã thiết bị","Thiết bị","Số phiếu mượn","Số lượng đã giao"},..loans.SelectMany(l=>l.Lines.Select(line=>new{l.Id,line.AssetId,line.QuantityIssued})).GroupBy(x=>x.AssetId).OrderByDescending(g=>g.Count()).Select(g=>new[]{names[g.Key].Code,names[g.Key].Name,g.Select(x=>x.Id).Distinct().Count().ToString(),g.Sum(x=>x.QuantityIssued).ToString()})];break;
+            }
+            case "usage-by-borrower":
+            {
+                var loans=await db.Loans.AsNoTracking().Include(x=>x.Lines).Where(x=>x.IssuedUtc>=startUtc&&x.IssuedUtc<endUtc).ToListAsync();
+                var borrowers=await db.Borrowers.AsNoTracking().ToDictionaryAsync(x=>x.Id,x=>new{x.Code,x.DisplayName,x.ClassName});
+                rows=[new[]{"Mã người mượn","Người mượn","Lớp / bộ môn","Số phiếu mượn","Số thiết bị đã nhận"},..loans.GroupBy(x=>x.BorrowerId).OrderByDescending(g=>g.Count()).Select(g=>new[]{borrowers[g.Key].Code,borrowers[g.Key].DisplayName,borrowers[g.Key].ClassName,g.Count().ToString(),g.Sum(l=>l.Lines.Sum(x=>x.QuantityIssued)).ToString()})];break;
+            }
+            case "overdue-by-asset":
+            {
+                var loans=await db.Loans.AsNoTracking().Include(x=>x.Lines).Where(x=>x.Status==LoanStatus.Open&&x.DueUtc<DateTime.UtcNow&&x.Lines.Any(line=>!line.IsConsumable&&line.QuantityIssued>line.QuantityReturned)).ToListAsync();
+                var names=await db.Assets.AsNoTracking().ToDictionaryAsync(x=>x.Id,x=>new{x.Code,x.Name});
+                rows=[new[]{"Mã thiết bị","Thiết bị","Số phiếu quá hạn","Số lượng chưa trả","Hạn trả cũ nhất"},..loans.SelectMany(l=>l.Lines.Where(x=>x.QuantityIssued>x.QuantityReturned).Select(line=>new{l.Id,l.DueUtc,line.AssetId,Outstanding=line.QuantityIssued-line.QuantityReturned})).GroupBy(x=>x.AssetId).OrderByDescending(g=>g.Count()).Select(g=>new[]{names[g.Key].Code,names[g.Key].Name,g.Select(x=>x.Id).Distinct().Count().ToString(),g.Sum(x=>x.Outstanding).ToString(),g.Min(x=>x.DueUtc).ToLocalTime().ToString("dd/MM/yyyy HH:mm")})];break;
+            }
+            case "overdue-by-borrower":
+            {
+                var loans=await db.Loans.AsNoTracking().Include(x=>x.Lines).Where(x=>x.Status==LoanStatus.Open&&x.DueUtc<DateTime.UtcNow&&x.Lines.Any(line=>!line.IsConsumable&&line.QuantityIssued>line.QuantityReturned)).ToListAsync();
+                var borrowers=await db.Borrowers.AsNoTracking().ToDictionaryAsync(x=>x.Id,x=>new{x.Code,x.DisplayName,x.ClassName});
+                rows=[new[]{"Mã người mượn","Người mượn","Lớp / bộ môn","Số phiếu quá hạn","Số thiết bị chưa trả","Hạn trả cũ nhất"},..loans.GroupBy(x=>x.BorrowerId).OrderByDescending(g=>g.Count()).Select(g=>new[]{borrowers[g.Key].Code,borrowers[g.Key].DisplayName,borrowers[g.Key].ClassName,g.Count().ToString(),g.Sum(l=>l.Lines.Sum(line=>line.QuantityIssued-line.QuantityReturned)).ToString(),g.Min(l=>l.DueUtc).ToLocalTime().ToString("dd/MM/yyyy HH:mm")})];break;
+            }
             default: throw new BusinessException("Loại báo cáo không được hỗ trợ.");
         }
+        var dataRows=rows.Count-1;
+        var reportName=report switch{"assets"=>"Danh sách thiết bị","borrowers"=>"Danh sách người mượn","loans"=>"Giao dịch mượn–trả","reservations"=>"Lịch đặt trước","inventory"=>"Kết quả kiểm kê","stock-adjustments"=>"Báo cáo nhập / điều chỉnh kho","analytics"=>"Hiệu suất sử dụng","usage-by-asset"=>"Lượt mượn theo thiết bị","usage-by-borrower"=>"Lượt mượn theo người mượn","overdue-by-asset"=>"Mượn quá hạn theo thiết bị","overdue-by-borrower"=>"Mượn quá hạn theo người mượn",_=>"Báo cáo"};
+        rows.InsertRange(0,[new[]{"Phường Hạ Long"},new[]{"Trường THCS Trọng Điểm"},new[]{"BÁO CÁO THIẾT BỊ PHÒNG STEM LAB"},new[]{reportName},new[]{$"Thời gian: {startUtc.ToLocalTime():dd/MM/yyyy} – {endUtc.ToLocalTime():dd/MM/yyyy}"}]);
         await Task.Run(async ()=>
         {
             var extension=Path.GetExtension(path).ToLowerInvariant();
@@ -150,12 +187,12 @@ public sealed partial class LabService
             {
                 using var book=new XLWorkbook(); var sheet=book.AddWorksheet("Báo cáo");
                 for(int r=0;r<rows.Count;r++)for(int c=0;c<rows[r].Length;c++)sheet.Cell(r+1,c+1).Value=rows[r][c];
-                sheet.Row(1).Style.Font.Bold=true;sheet.Columns().AdjustToContents();book.SaveAs(path);
+                var columns=rows.Max(r=>r.Length);for(var r=1;r<=5;r++){if(columns>1)sheet.Range(r,1,r,columns).Merge();sheet.Row(r).Style.Font.Bold=true;sheet.Row(r).Style.Alignment.Horizontal=XLAlignmentHorizontalValues.Center;}sheet.Row(3).Style.Font.FontSize=16;sheet.Row(6).Style.Font.Bold=true;sheet.SheetView.FreezeRows(6);sheet.Columns().AdjustToContents();book.SaveAs(path);
             }
             else if(extension==".pdf") SimplePdf.Write(path,rows);
             else { Rules.Require(extension==".csv","Chọn định dạng CSV, XLSX hoặc PDF."); await File.WriteAllTextAsync(path,Csv.Write(rows),new UTF8Encoding(true)); }
         });
-        await WriteAsync(Permission.Reports,db=> { Audit(db,"ExportReport","Report",null,$"Type={report}; Rows={rows.Count-1}"); return Task.CompletedTask; }); return path;
+        await WriteAsync(Permission.Reports,db=> { Audit(db,"ExportReport","Report",null,$"Type={report}; Rows={dataRows}"); return Task.CompletedTask; }); return path;
     }
     public async Task<string> ExportQrAsync(string text,string path)
     {

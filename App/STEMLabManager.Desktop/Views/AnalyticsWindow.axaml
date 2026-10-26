@@ -1,0 +1,32 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:STEMLabManager.Desktop.ViewModels" xmlns:c="using:STEMLabManager.Desktop.Controls"
+        x:Class="STEMLabManager.Desktop.Views.AnalyticsWindow" x:DataType="vm:MainViewModel"
+        Width="1120" Height="820" MinWidth="720" MinHeight="560" WindowStartupLocation="CenterOwner"
+        Title="Biểu đồ phân tích">
+  <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="24" Margin="14" Padding="20">
+    <Grid RowDefinitions="Auto,*,Auto" RowSpacing="16">
+      <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+        <Border Background="{DynamicResource PrimaryContainerBrush}" Width="44" Height="44" CornerRadius="14"><c:AppIcon Kind="chart" Foreground="{DynamicResource PrimaryTextBrush}" Width="22" Height="22" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+        <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center"><TextBlock Text="Tổng quan sử dụng thiết bị" FontSize="21" FontWeight="SemiBold"/><TextBlock Text="{Binding Description}" Classes="caption" TextWrapping="Wrap"/></StackPanel>
+        <Button Grid.Column="2" Content="Đóng" IsCancel="True" Click="CloseClick" VerticalAlignment="Center"/>
+      </Grid>
+      <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="16">
+          <ItemsControl ItemsSource="{Binding Kpis}">
+            <ItemsControl.ItemsPanel><ItemsPanelTemplate><c:AdaptiveTilesPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:Kpi"><Border Classes="card" Padding="14" MinHeight="108"><StackPanel Spacing="6"><TextBlock Text="{Binding Label}" Classes="caption"/><TextBlock Text="{Binding Value}" FontSize="27" FontWeight="SemiBold"/><TextBlock Text="{Binding Hint}" Classes="caption" TextWrapping="Wrap"/></StackPanel></Border></DataTemplate></ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <c:AdaptiveColumnsPanel Ratio="1.4">
+            <Border Classes="card"><StackPanel Spacing="8"><TextBlock Text="Lượt mượn theo ngày" Classes="sectionTitle"/><TextBlock Text="Trong khoảng thời gian đã chọn" Classes="caption"/><c:TrendChart x:Name="TrendChart" ItemsSource="{Binding TrendPoints}" Height="210" Foreground="{DynamicResource SecondaryBrush}" GridBrush="{DynamicResource BorderBrush}"/></StackPanel></Border>
+            <Border Classes="card"><StackPanel Spacing="8"><TextBlock Text="Tỷ lệ phiếu quá hạn" Classes="sectionTitle"/><c:DonutChart Value="{Binding OverdueFraction}" TrackBrush="{DynamicResource MutedSurfaceBrush}" Foreground="{DynamicResource TextBrush}" Width="150" Height="150" HorizontalAlignment="Center"/><TextBlock Text="{Binding PeriodLoanCount}" Classes="caption" HorizontalAlignment="Center"/></StackPanel></Border>
+          </c:AdaptiveColumnsPanel>
+          <c:AdaptiveColumnsPanel Ratio="1.4">
+            <Border Classes="card"><StackPanel Spacing="8"><Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="4"><TextBlock Text="Dự kiến lượt mượn tuần tới" Classes="sectionTitle"/><TextBlock Text="{Binding ForecastTotalLabel}" FontSize="21" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryBrush}"/></StackPanel><c:AppIcon Grid.Column="1" Kind="calendar" Foreground="{DynamicResource PrimaryBrush}"/></Grid><c:ForecastChart x:Name="ForecastChart" ItemsSource="{Binding ForecastPoints}" Height="195" Foreground="{DynamicResource SecondaryBrush}" GridBrush="{DynamicResource BorderBrush}"/><TextBlock Text="{Binding ForecastStatus}" Classes="caption" TextWrapping="Wrap"/></StackPanel></Border>
+            <Border Classes="card"><StackPanel Spacing="8"><TextBlock Text="Thiết bị được mượn nhiều" Classes="sectionTitle"/><TextBlock Text="Số lượng đã giao trong kỳ" Classes="caption"/><c:RankingChart ItemsSource="{Binding RankingPoints}" Height="225" Foreground="{DynamicResource SecondaryBrush}" GridBrush="{DynamicResource MutedSurfaceBrush}"/></StackPanel></Border>
+          </c:AdaptiveColumnsPanel>
+        </StackPanel>
+      </ScrollViewer>
+      <Grid Grid.Row="2" ColumnDefinitions="*,Auto" ColumnSpacing="12"><TextBlock Text="Biểu đồ chỉ hỗ trợ theo dõi và lập kế hoạch; hãy đối chiếu lịch học, tồn kho trước khi mua thêm." Classes="caption" TextWrapping="Wrap" VerticalAlignment="Center"/><Button Grid.Column="1" Content="Đóng" IsDefault="True" Click="CloseClick"/></Grid>
+    </Grid>
+  </Border>
+</Window>

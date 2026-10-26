@@ -8,6 +8,21 @@ namespace STEMLabManager.Tests;
 
 public sealed class OpenAiInsightsTests
 {
+    [Fact]
+    public void LocalSsaForecastRequiresHistoryAndReturnsSevenLocallyTrainedPointsWithBacktest()
+    {
+        var start=DateTime.Today.AddDays(-35).ToUniversalTime();var end=start.AddDays(35);
+        var tooShort=Insights.Forecast(Enumerable.Range(0,20).Select(i=>new MetricPoint(i.ToString(),i%4)).ToArray(),start,end);
+        Assert.False(tooShort.Ready);Assert.Empty(tooShort.Points);Assert.Contains("21",tooShort.Status);
+
+        var daily=Enumerable.Range(0,35).Select(i=>new MetricPoint(i.ToString(),(i%7==0?3:1)+(i%5==0?1:0))).ToArray();
+        var forecast=Insights.Forecast(daily,start,end);
+        Assert.True(forecast.Ready,forecast.Status);Assert.Equal(7,forecast.Points.Count);
+        Assert.Equal(start.ToLocalTime().Date.AddDays(daily.Length).ToString("dd/MM"),forecast.Points[0].Label);
+        Assert.All(forecast.Points,p=>Assert.True(double.IsFinite(p.Value)&&p.Value>=0));
+        Assert.NotNull(forecast.BacktestMae);Assert.True(double.IsFinite(forecast.BacktestMae!.Value));
+        Assert.True(forecast.BacktestMae.HasValue);Assert.Contains("dự báo lệch",forecast.Status);Assert.DoesNotContain("SSA",forecast.Status);Assert.DoesNotContain("MAE",forecast.Status);
+    }
     [Theory]
     [InlineData("gpt-5",true)]
     [InlineData("gpt-5-2025-08-07",true)]

@@ -43,9 +43,11 @@ public sealed class DemoRecordingTests
         public Task<bool> FormAsync(string t,string d,IEnumerable<FormField> f,Func<FormViewModel,Task> s)=>Task.FromResult(false);
         public Task<bool> ConfirmAsync(string t,string d)=>Task.FromResult(false);
         public Task<bool> PreviewAsync(string t,string d,byte[] image)=>Task.FromResult(false);
+        public Task<bool> PreviewLiveAsync(string t,string d,byte[] image,Func<CancellationToken,Task<byte[]>> readFrame)=>Task.FromResult(false);
         public Task<string?> OpenAsync(string t,params string[] patterns)=>Task.FromResult<string?>(null);
         public Task<string?> SaveAsync(string t,string filename,params string[] patterns)=>Task.FromResult<string?>(null);
         public Task<string?> FolderAsync(string t)=>Task.FromResult<string?>(null);
         public Task<bool> WizardAsync(LoanWizardViewModel vm)=>Task.FromResult(false);
+        public Task<bool> AnalyticsAsync(MainViewModel vm)=>Task.FromResult(false);
     }
 }

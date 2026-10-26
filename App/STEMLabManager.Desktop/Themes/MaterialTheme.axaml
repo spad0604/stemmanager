@@ -41,10 +41,20 @@
     <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
     <Setter Property="BorderThickness" Value="1" />
   </Style>
+  <Style Selector="Button.dateTimeField">
+    <Setter Property="Background" Value="{DynamicResource InputBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="MinHeight" Value="42" />
+    <Setter Property="Padding" Value="12,8" />
+    <Setter Property="FontWeight" Value="Normal" />
+  </Style>
   <Style Selector="TextBox">
     <Setter Property="Background" Value="{DynamicResource InputBrush}" />
     <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
-    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="12" />
     <Setter Property="MinHeight" Value="42" />
@@ -62,7 +72,9 @@
   </Style>
   <Style Selector="ComboBox">
     <Setter Property="Background" Value="{DynamicResource InputBrush}" />
-    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="12" />
     <Setter Property="MinHeight" Value="42" />
     <Setter Property="Padding" Value="12,8" />

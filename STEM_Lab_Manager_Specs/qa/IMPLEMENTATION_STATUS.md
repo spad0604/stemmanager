@@ -11,7 +11,7 @@ Nguồn kiểm chứng: `../../docs/VALIDATION.md`, test TRX và source code tro
 - [x] 45 unit/integration/model tests + 8 UI tests đạt; build/publish thực, không dựa vào mock screens trong production.
 - [x] User guide Markdown/PDF, mẫu CSV/XLSX, model licenses/checksums, kịch bản demo và walkthrough UI tự động có nhãn.
 - [ ] Installer Setup.exe biên dịch bằng script trên Windows và cài trên Windows sạch.
-- [ ] Nghiệm thu camera/liveness/false-match/native libraries trên phần cứng Windows, không đồng nhất với inference tensor test.
+- [ ] Nghiệm thu camera/ảnh đăng ký một lần/false-match/native libraries trên phần cứng Windows, không đồng nhất với inference tensor test.
 - [ ] LLM endpoint/key thật; test outage/timeout bằng network thật.
 - [ ] Chứng nhận rà soát UI thủ công, quyền xử lý sinh trắc học/retention/license; video demo thủ công 5–7 phút và khảo sát tác động giáo dục.
 

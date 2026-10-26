@@ -74,6 +74,27 @@ public sealed class RankingChart : MetricChart
         }
     }
 }
+public sealed class ForecastChart : MetricChart
+{
+    private static readonly IBrush Blue=Brush.Parse("#315BDB");
+    public ForecastChart(){MinHeight=190;}
+    public override void Render(DrawingContext context)
+    {
+        var data=Points.Take(7).ToList();
+        if(data.Count==0){context.DrawText(Text("Chưa đủ dữ liệu để ước tính nhu cầu tuần tới",13),new(8,70));return;}
+        double left=12,top=24,bottom=34,width=Math.Max(1,Bounds.Width-left-12),height=Math.Max(1,Bounds.Height-top-bottom);
+        var max=Math.Max(1,Math.Ceiling(data.Max(p=>p.Value)));
+        for(int i=0;i<=2;i++){var y=top+height-height*i/2;context.DrawLine(new Pen(GridBrush,1),new(left,y),new(left+width,y));}
+        var slot=width/data.Count;var barWidth=Math.Min(30,slot*.52);
+        for(int i=0;i<data.Count;i++)
+        {
+            var item=data[i];var h=Math.Max(2,height*Math.Clamp(item.Value/max,0,1));var x=left+slot*i+(slot-barWidth)/2;var y=top+height-h;
+            context.DrawRectangle(Blue,null,new Rect(x,y,barWidth,h),5,5);
+            var value=Text(item.Value.ToString("0.#"),10,Foreground,FontWeight.SemiBold);context.DrawText(value,new(x+(barWidth-value.Width)/2,Math.Max(0,y-19)));
+            var label=Text(item.Label,10);context.DrawText(label,new(x+(barWidth-label.Width)/2,top+height+9));
+        }
+    }
+}
 public sealed class DonutChart : Control
 {
     public static readonly StyledProperty<double> ValueProperty=AvaloniaProperty.Register<DonutChart,double>(nameof(Value));

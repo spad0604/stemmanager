@@ -54,7 +54,7 @@ public sealed partial class LabService
         await using var db=Db(); await VerifyActorAsync(db,Permission.Read);
         var loans=await db.Loans.AsNoTracking().Include(x=>x.Lines).Where(x=>history || x.Status==LoanStatus.Open).OrderByDescending(x=>x.IssuedUtc).ToListAsync();
         var borrowers=await db.Borrowers.ToDictionaryAsync(x=>x.Id,x=>x.DisplayName); var users=await db.Users.ToDictionaryAsync(x=>x.Id,x=>x.DisplayName); var assets=await db.Assets.ToDictionaryAsync(x=>x.Id,x=>x.Name);
-        return loans.Select(x=>new LoanRow(x.Id,x.Code,CurrentActor!.Role==Role.Viewer?"Ẩn danh":borrowers[x.BorrowerId],CurrentActor.Role==Role.Viewer?"Ẩn danh":users[x.IssuedById],x.IssuedUtc,x.DueUtc,x.Status,CurrentActor.Role==Role.Viewer?"Ẩn":x.Purpose,x.Lines.Select(l=>new LoanLineRow(l.Id,l.AssetId,l.UnitId,assets[l.AssetId],l.QuantityIssued,l.QuantityReturned,l.IsConsumable)).ToList())).ToList();
+        return loans.Select(x=>new LoanRow(x.Id,x.Code,CurrentActor!.Role==Role.Viewer?"Ẩn danh":borrowers[x.BorrowerId],CurrentActor.Role==Role.Viewer?"Ẩn danh":users[x.IssuedById],x.IssuedUtc,x.DueUtc,x.Status,CurrentActor.Role==Role.Viewer?"Ẩn":x.Purpose,x.Lines.Select(l=>new LoanLineRow(l.Id,l.AssetId,l.UnitId,assets[l.AssetId],l.QuantityIssued,l.QuantityReturned,l.IsConsumable)).ToList(),CurrentActor.Role==Role.Viewer?null:x.BorrowerId)).ToList();
     }
     private async Task TeacherPolicyAsync(LabDbContext db)
     {

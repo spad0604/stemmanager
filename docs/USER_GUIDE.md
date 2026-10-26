@@ -1,14 +1,29 @@
 # Hướng dẫn STEM Lab Manager
 
-1. Cài `STEMManager-Setup-x64.exe`, mở shortcut. Lần đầu đặt tên phòng và tài khoản quản trị; mật khẩu ít nhất 12 ký tự, có chữ hoa, thường, số. Không có mật khẩu mặc định.
-2. Trong **Danh mục & vị trí**, thêm ngăn/kệ và loại thiết bị. Trong **Thiết bị**, tạo thiết bị: cá thể có QR riêng; theo số lượng có thể mượn/trả; tiêu hao xuất khỏi tồn và không trả. Chọn một dòng rồi dùng nút thao tác. Dữ liệu quan trọng không xóa cứng.
-3. Thêm **Người mượn** hoặc import CSV/Excel. Xác nhận ánh xạ cột Code, Name, Class, Type, Contact; xem trước và sửa toàn bộ lỗi trước khi nhập. Người mượn không cần tài khoản ứng dụng.
-4. **Mượn–Trả → Tạo phiếu**: chọn người, thêm các dòng thiết bị, kiểm tra hạn trả và mục đích rồi xác nhận bàn giao. Chọn phiếu và **Trả thiết bị** để trả một phần; lượng 0 bỏ qua dòng. Hỏng chuyển bảo trì, mất không trở lại khả dụng. **Lịch sử** giữ phiếu đã đóng.
-5. **Đặt trước**: tạo khoảng ngày giờ, quản lý duyệt. Đến giờ, chọn **Bàn giao lịch đặt** và xác nhận giao thực tế. Thiếu tồn/trùng lịch bị từ chối. Hủy/từ chối cần lý do; hết hạn/no-show cần được xử lý.
-6. **Nhập kho & kiểm kê**: số lượng dùng phiên kiểm đếm, cá thể dùng Kiểm kê QR (mỗi dòng một mã), xác nhận điều chỉnh sau khi kiểm tra. Cá thể thiếu chuyển Mất, tìm lại chuyển Sẵn sàng. **Bảo trì** ghi lỗi và hoàn tất sửa để đưa cá thể trở lại sử dụng.
-7. **Báo cáo**: chọn kỳ, loại báo cáo, xuất CSV/XLSX/PDF. Thống kê local chạy offline. **Phân tích AI** có dự báo trung bình đơn giản, ghi nguồn và giới hạn. LLM chỉ hoạt động nếu quản trị bật; phải xem trước JSON tổng hợp trước mỗi lần gửi. Trong Cài đặt LLM, OpenAI dùng endpoint `https://api.openai.com/v1/chat/completions`, model `gpt-5`; nhập khóa vào trường mật khẩu để lưu mã hóa. Khóa cấu hình chỉ thuộc dữ liệu của tài khoản OS hiện tại, không tự đi theo bản cài Windows hoặc chế độ Demo.
-8. Nhận diện mặt mặc định tắt. Chỉ bật khi có căn cứ xử lý, consent phù hợp; đăng ký từ camera Windows. Nhân viên đối chiếu người thật, thẻ/QR, thực hiện hai lần chụp và thử thách quay mặt theo hướng ngẫu nhiên. Đây chỉ là kiểm tra chuyển động cơ bản; kết quả nhận diện là ứng viên. QR/mã luôn thay thế được. Thu hồi consent xóa embedding, giữ sự kiện xóa; restore tắt Face để rà soát consent trước bật lại.
-9. **Sao lưu** mỗi ngày và lưu thêm bản ở USB/ổ khác. Backup chứa khóa giải mã: chỉ người được phép giữ file. **Phục hồi** kiểm tra backup, giữ DB cũ và yêu cầu đăng nhập lại. Gỡ/cập nhật ứng dụng giữ dữ liệu trong LocalAppData.
-10. Shortcut **STEM Demo** hoặc tham số `--demo` mở DB minh họa riêng. Tạo tài khoản riêng, vào Cài đặt → Nạp dữ liệu minh họa. Không dùng thông tin học sinh thật trong demo.
+## Bắt đầu
 
-Ngày giờ nhập `dd/MM/yyyy HH:mm`, hiển thị giờ máy, lưu UTC. Ctrl+K tìm nhanh; Enter xác nhận form. Phiên tự khóa sau thời gian bất hoạt (mặc định 10 phút).
+1. Cài `STEMManager-Setup-x64.exe` và mở ứng dụng. Lần đầu, tạo tên phòng, tài khoản quản lý và mật khẩu. Không có mật khẩu mặc định.
+2. Màn đăng nhập hiển thị nhận diện Trường THCS Trọng Điểm.
+3. Thêm loại thiết bị và vị trí trong **Danh mục & vị trí**, sau đó tạo thiết bị. Có thể tải ảnh ngay trong biểu mẫu thiết bị; ảnh cũng xuất hiện ở danh sách và khi chọn thiết bị để mượn.
+4. Thêm **Người mượn** hoặc nhập danh sách từ CSV/Excel. Tài khoản đăng nhập và hồ sơ người mượn là hai khái niệm riêng; hệ thống chỉ tự chọn người mượn khi mã tài khoản hoặc tên hiển thị khớp duy nhất.
+
+## Mượn – trả
+
+- Từ **Thiết bị**, chọn thiết bị rồi bấm **Thêm vào giỏ mượn**. Giỏ giữ các thiết bị đã chọn và mở phiếu với các món đó.
+- Trong **Mượn – Trả**, tạo phiếu, xác nhận người mượn, hạn trả và mục đích trước khi bàn giao. Có thể tra cứu khuôn mặt để chọn người khi đã đăng ký embedding; nhân viên vẫn phải xác nhận đúng người và đúng thiết bị.
+- Khi trả, chọn phiếu và ghi số lượng/tình trạng từng dòng. Thiết bị hỏng được chuyển sang bảo trì; thiết bị mất không cộng lại vào số sẵn sàng.
+- Chọn **Đặt trước** để tạo và quản lý lịch sử dụng. Lịch phải được duyệt trước khi bàn giao.
+
+## Tổng quan và báo cáo
+
+- Bấm các ô **Thiết bị sẵn sàng**, **Đang mượn**, **Quá hạn** hoặc **Lịch hôm nay** trên Tổng quan để mở danh sách chi tiết tương ứng. Ô thiết bị sẵn sàng lọc chỉ các thiết bị có thể giao ngay.
+- **Phân tích AI** mở biểu đồ trực quan. Dự báo SSA chạy cục bộ; nhận xét LLM chỉ gửi dữ liệu tổng hợp khi quản lý bật và cấu hình dịch vụ.
+- Trong **Báo cáo & xuất dữ liệu**, chọn kỳ, loại báo cáo rồi xuất CSV, Excel hoặc PDF. Có báo cáo lượt mượn theo thiết bị/người mượn, báo cáo quá hạn theo thiết bị/người mượn và báo cáo nhập/điều chỉnh kho (STT, tên thiết bị, số lượng nhập/giảm, lý do). Báo cáo nhập/điều chỉnh chỉ dành cho quản lý kho; báo cáo theo người mượn yêu cầu quyền xem dữ liệu cá nhân.
+
+## Dữ liệu và quyền riêng tư
+
+- Face embedding được bật mặc định cho cài đặt mới. Chỉ đăng ký khi có căn cứ và sự đồng ý phù hợp. Đăng ký bằng một ảnh trực diện; nhân viên đối chiếu người thật trước khi xác nhận. Khuôn mặt chỉ giúp tìm hồ sơ, không thay thế bước xác minh và QR/mã vẫn dùng được.
+- Dữ liệu ứng dụng lưu cục bộ. Sao lưu thường xuyên và cất riêng file sao lưu vì file có dữ liệu nhạy cảm.
+- Shortcut **STEM Demo** hoặc `--demo` dùng cơ sở dữ liệu minh họa riêng.
+
+Ngày giờ hiển thị theo giờ máy. Ctrl+K mở tìm nhanh. Phiên tự khóa sau thời gian không hoạt động được cấu hình.

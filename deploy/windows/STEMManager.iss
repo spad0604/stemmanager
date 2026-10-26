@@ -12,6 +12,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir=..\..\artifacts\windows
 OutputBaseFilename=STEMManager-Setup-x64
+SetupIconFile=..\..\App\STEMLabManager.Desktop\Assets\school-logo.ico
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern

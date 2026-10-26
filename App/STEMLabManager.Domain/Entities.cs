@@ -23,7 +23,7 @@ public sealed class Borrower : Entity
     public string Code { get; set; } = "";
     public string DisplayName { get; set; } = "";
     public string ClassName { get; set; } = "";
-    public string Type { get; set; } = "Học sinh";
+    public string Type { get; set; } = "Người mượn";
     public string? Contact { get; set; }
     public bool IsActive { get; set; } = true;
 }

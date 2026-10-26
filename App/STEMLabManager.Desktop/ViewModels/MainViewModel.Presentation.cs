@@ -7,6 +7,9 @@ public partial class MainViewModel
 {
     [ObservableProperty] private IReadOnlyList<MetricPoint> trendPoints=[];
     [ObservableProperty] private IReadOnlyList<MetricPoint> rankingPoints=[];
+    [ObservableProperty] private IReadOnlyList<MetricPoint> forecastPoints=[];
+    [ObservableProperty] private string forecastStatus="";
+    [ObservableProperty] private string forecastTotalLabel="—";
     [ObservableProperty] private double overdueFraction;
     [ObservableProperty] private string periodLoanCount="0";
     [ObservableProperty] private string periodBorrowerCount="0";
